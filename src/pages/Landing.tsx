@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { PageLayout } from "@/components/layout/PageLayout";
 import { FeatureCard } from "@/components/ui/FeatureCard";
 import { PrivacyBadge } from "@/components/ui/PrivacyBadge";
+import { ParticleBackground } from "@/components/ui/ParticleBackground";
 
 const features = [
   {
@@ -38,8 +39,20 @@ export default function Landing() {
   return (
     <PageLayout>
       {/* Hero Section */}
-      <section className="relative min-h-[90vh] flex items-center">
-        <div className="absolute inset-0 overflow-hidden">
+      <section className="relative min-h-[90vh] flex items-center overflow-hidden">
+        {/* Particle Background */}
+        <div className="absolute inset-0">
+          <ParticleBackground 
+            particleCount={60} 
+            connectionDistance={120}
+            speed={0.3}
+          />
+        </div>
+
+        {/* Gradient Overlays */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-background to-transparent" />
+          <div className="absolute bottom-0 left-0 w-full h-32 bg-gradient-to-t from-background to-transparent" />
           <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
           <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-primary/3 rounded-full blur-3xl" />
         </div>
@@ -95,6 +108,22 @@ export default function Landing() {
                 Learn More
                 <Icon icon="ph:arrow-right" className="w-5 h-5" />
               </Link>
+            </motion.div>
+
+            {/* ZK Badge */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.6, delay: 0.4 }}
+              className="mt-8 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-secondary/50 border border-border"
+            >
+              <span className="flex h-2 w-2 relative">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-success" />
+              </span>
+              <span className="text-sm text-muted-foreground">
+                Powered by <span className="text-primary font-medium">Zero-Knowledge Proofs</span>
+              </span>
             </motion.div>
           </div>
 

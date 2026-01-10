@@ -1,29 +1,70 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Icon } from "@iconify/react";
 import { motion } from "framer-motion";
 import { PageLayout } from "@/components/layout/PageLayout";
+import { ZKProofVisualizer } from "@/components/ui/ZKProofVisualizer";
+import { generateAuthProof, deriveWalletAddress, ZKProofData } from "@/lib/zkProof";
 
 type AuthMethod = "passkey" | "email" | null;
 type AuthStep = "method" | "email-input" | "verifying" | "creating";
+type ProofStage = "idle" | "hashing" | "generating" | "verifying" | "complete";
 
 export default function Login() {
   const navigate = useNavigate();
   const [method, setMethod] = useState<AuthMethod>(null);
   const [step, setStep] = useState<AuthStep>("method");
   const [email, setEmail] = useState("");
+  const [proofStage, setProofStage] = useState<ProofStage>("idle");
+  const [proof, setProof] = useState<ZKProofData | null>(null);
+  const [proofDuration, setProofDuration] = useState<number>(0);
+
+  const runZKProofGeneration = useCallback(async (identifier: string) => {
+    // Stage 1: Hashing
+    setProofStage("hashing");
+    await new Promise((resolve) => setTimeout(resolve, 600));
+    
+    // Stage 2: Generating proof
+    setProofStage("generating");
+    const secret = crypto.randomUUID();
+    const result = await generateAuthProof(identifier, secret);
+    
+    if (result.success && result.proof) {
+      // Stage 3: Verifying
+      setProofStage("verifying");
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      
+      setProof(result.proof);
+      setProofDuration(result.duration);
+      
+      // Stage 4: Complete
+      setProofStage("complete");
+      
+      // Store commitment for wallet derivation
+      const walletAddress = await deriveWalletAddress(result.proof.commitment);
+      sessionStorage.setItem("veil_wallet", walletAddress);
+      sessionStorage.setItem("veil_commitment", result.proof.commitment);
+      
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+      
+      return true;
+    }
+    return false;
+  }, []);
 
   const handlePasskeyAuth = async () => {
     setMethod("passkey");
     setStep("verifying");
     
-    // Simulate verification
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    setStep("creating");
+    // Generate a unique identifier for passkey (simulated)
+    const passkeyId = `passkey_${crypto.randomUUID()}`;
+    const success = await runZKProofGeneration(passkeyId);
     
-    // Simulate wallet creation
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    navigate("/wallet-created");
+    if (success) {
+      setStep("creating");
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      navigate("/wallet-created");
+    }
   };
 
   const handleEmailSubmit = async (e: React.FormEvent) => {
@@ -31,14 +72,13 @@ export default function Login() {
     if (!email) return;
     
     setStep("verifying");
+    const success = await runZKProofGeneration(email);
     
-    // Simulate verification
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    setStep("creating");
-    
-    // Simulate wallet creation
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    navigate("/wallet-created");
+    if (success) {
+      setStep("creating");
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      navigate("/wallet-created");
+    }
   };
 
   return (
@@ -58,13 +98,13 @@ export default function Login() {
               <h1 className="text-2xl font-bold mb-2">
                 {step === "method" && "Private Authentication"}
                 {step === "email-input" && "Enter Your Email"}
-                {step === "verifying" && "Verifying Identity"}
+                {step === "verifying" && "Generating ZK Proof"}
                 {step === "creating" && "Creating Your Wallet"}
               </h1>
               <p className="text-muted-foreground text-sm">
                 {step === "method" && "No passwords stored. No identity revealed."}
                 {step === "email-input" && "We'll derive your wallet from a zero-knowledge proof of your email."}
-                {step === "verifying" && "Generating zero-knowledge proof..."}
+                {step === "verifying" && "Real cryptographic proof generation in progress..."}
                 {step === "creating" && "Deriving your private wallet address..."}
               </p>
             </div>
@@ -161,33 +201,30 @@ export default function Login() {
               </form>
             )}
 
-            {/* Loading States */}
+            {/* ZK Proof Generation Visualization */}
             {(step === "verifying" || step === "creating") && (
-              <div className="text-center py-8">
-                <div className="w-16 h-16 rounded-full border-2 border-primary border-t-transparent animate-spin mx-auto mb-6" />
+              <div className="py-4">
+                <ZKProofVisualizer
+                  isGenerating={step === "verifying"}
+                  proof={proof}
+                  stage={proofStage}
+                  duration={proofDuration}
+                />
                 
-                <div className="space-y-3">
-                  <div className="flex items-center gap-3 justify-center">
-                    <Icon 
-                      icon={step === "verifying" ? "ph:circle-notch" : "ph:check-circle"} 
-                      className={`w-5 h-5 ${step === "verifying" ? "text-primary animate-spin" : "text-success"}`} 
-                    />
-                    <span className={step === "verifying" ? "text-foreground" : "text-muted-foreground"}>
-                      Generating ZK proof
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-3 justify-center">
-                    <Icon 
-                      icon={step === "creating" ? "ph:circle-notch" : "ph:circle-dashed"} 
-                      className={`w-5 h-5 ${step === "creating" ? "text-primary animate-spin" : "text-muted-foreground"}`} 
-                    />
-                    <span className={step === "creating" ? "text-foreground" : "text-muted-foreground"}>
-                      Deriving wallet
-                    </span>
-                  </div>
-                </div>
+                {step === "creating" && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="mt-6 text-center"
+                  >
+                    <div className="w-12 h-12 rounded-full border-2 border-primary border-t-transparent animate-spin mx-auto mb-4" />
+                    <p className="text-sm text-muted-foreground">
+                      Deriving wallet from commitment...
+                    </p>
+                  </motion.div>
+                )}
 
-                <p className="text-xs text-muted-foreground mt-6">
+                <p className="text-xs text-muted-foreground text-center mt-6">
                   All operations happen locally on your device
                 </p>
               </div>
