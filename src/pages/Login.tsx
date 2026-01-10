@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { PageLayout } from "@/components/layout/PageLayout";
 import { ZKProofVisualizer } from "@/components/ui/ZKProofVisualizer";
 import { generateAuthProof, deriveWalletAddress, ZKProofData } from "@/lib/zkProof";
+import { useAuth } from "@/contexts/AuthContext";
 
 type AuthMethod = "passkey" | "email" | null;
 type AuthStep = "method" | "email-input" | "verifying" | "creating";
@@ -12,6 +13,7 @@ type ProofStage = "idle" | "hashing" | "generating" | "verifying" | "complete";
 
 export default function Login() {
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [method, setMethod] = useState<AuthMethod>(null);
   const [step, setStep] = useState<AuthStep>("method");
   const [email, setEmail] = useState("");
@@ -42,15 +44,16 @@ export default function Login() {
       
       // Store commitment for wallet derivation
       const walletAddress = await deriveWalletAddress(result.proof.commitment);
-      sessionStorage.setItem("veil_wallet", walletAddress);
-      sessionStorage.setItem("veil_commitment", result.proof.commitment);
-      
+
+      // Update auth context (this also stores in sessionStorage)
+      login(walletAddress, result.proof.commitment);
+
       await new Promise((resolve) => setTimeout(resolve, 1500));
-      
+
       return true;
     }
     return false;
-  }, []);
+  }, [login]);
 
   const handlePasskeyAuth = async () => {
     setMethod("passkey");

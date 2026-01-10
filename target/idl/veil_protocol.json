@@ -1,0 +1,603 @@
+{
+  "address": "5C1VaebPdHZYETnTL18cLJK2RexXmVVhkkYpnYHD5P4h",
+  "metadata": {
+    "name": "veil_protocol",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "Privacy-preserving wallet infrastructure for Solana"
+  },
+  "instructions": [
+    {
+      "name": "cancel_recovery",
+      "docs": [
+        "Cancel an active recovery (owner only, before timelock expires)"
+      ],
+      "discriminator": [
+        176,
+        23,
+        203,
+        37,
+        121,
+        251,
+        227,
+        83
+      ],
+      "accounts": [
+        {
+          "name": "wallet_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  119,
+                  97,
+                  108,
+                  108,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "wallet_account.owner",
+                "account": "WalletAccount"
+              }
+            ]
+          }
+        },
+        {
+          "name": "user",
+          "signer": true
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "execute_recovery",
+      "docs": [
+        "Execute recovery after timelock has expired",
+        "Requires proof of recovery secret ownership"
+      ],
+      "discriminator": [
+        203,
+        133,
+        133,
+        228,
+        153,
+        121,
+        182,
+        237
+      ],
+      "accounts": [
+        {
+          "name": "wallet_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  119,
+                  97,
+                  108,
+                  108,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "wallet_account.owner",
+                "account": "WalletAccount"
+              }
+            ]
+          }
+        },
+        {
+          "name": "user",
+          "signer": true
+        }
+      ],
+      "args": [
+        {
+          "name": "recovery_proof",
+          "type": "bytes"
+        }
+      ]
+    },
+    {
+      "name": "initialize_commitment",
+      "docs": [
+        "Initialize a new wallet commitment",
+        "This stores a privacy-preserving commitment without revealing identity"
+      ],
+      "discriminator": [
+        79,
+        227,
+        189,
+        206,
+        151,
+        200,
+        0,
+        214
+      ],
+      "accounts": [
+        {
+          "name": "wallet_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  119,
+                  97,
+                  108,
+                  108,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "user"
+              }
+            ]
+          }
+        },
+        {
+          "name": "user",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "commitment",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "initiate_recovery",
+      "docs": [
+        "Initiate time-locked recovery",
+        "This allows wallet recovery after a specified timelock period"
+      ],
+      "discriminator": [
+        132,
+        148,
+        60,
+        74,
+        49,
+        178,
+        235,
+        187
+      ],
+      "accounts": [
+        {
+          "name": "wallet_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  119,
+                  97,
+                  108,
+                  108,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "wallet_account.owner",
+                "account": "WalletAccount"
+              }
+            ]
+          }
+        },
+        {
+          "name": "user",
+          "signer": true
+        }
+      ],
+      "args": [
+        {
+          "name": "recovery_commitment",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        },
+        {
+          "name": "timelock_days",
+          "type": "u8"
+        }
+      ]
+    },
+    {
+      "name": "submit_proof",
+      "docs": [
+        "Submit a zero-knowledge proof for verification",
+        "In production, this would verify the actual ZK proof on-chain",
+        "For hackathon demo, we accept the proof and emit an event"
+      ],
+      "discriminator": [
+        54,
+        241,
+        46,
+        84,
+        4,
+        212,
+        46,
+        94
+      ],
+      "accounts": [
+        {
+          "name": "wallet_account",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  119,
+                  97,
+                  108,
+                  108,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "wallet_account.owner",
+                "account": "WalletAccount"
+              }
+            ]
+          }
+        },
+        {
+          "name": "user",
+          "signer": true
+        }
+      ],
+      "args": [
+        {
+          "name": "proof_data",
+          "type": "bytes"
+        },
+        {
+          "name": "public_signals",
+          "type": {
+            "vec": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "WalletAccount",
+      "discriminator": [
+        158,
+        98,
+        171,
+        153,
+        212,
+        64,
+        242,
+        213
+      ]
+    }
+  ],
+  "events": [
+    {
+      "name": "CommitmentCreated",
+      "discriminator": [
+        179,
+        58,
+        10,
+        188,
+        241,
+        19,
+        191,
+        229
+      ]
+    },
+    {
+      "name": "ProofVerified",
+      "discriminator": [
+        181,
+        54,
+        148,
+        211,
+        237,
+        73,
+        131,
+        232
+      ]
+    },
+    {
+      "name": "RecoveryCancelled",
+      "discriminator": [
+        191,
+        25,
+        236,
+        86,
+        25,
+        77,
+        117,
+        96
+      ]
+    },
+    {
+      "name": "RecoveryExecuted",
+      "discriminator": [
+        161,
+        218,
+        6,
+        191,
+        85,
+        217,
+        12,
+        144
+      ]
+    },
+    {
+      "name": "RecoveryInitiated",
+      "discriminator": [
+        138,
+        165,
+        92,
+        207,
+        123,
+        93,
+        223,
+        98
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "InvalidProof",
+      "msg": "Invalid proof provided"
+    },
+    {
+      "code": 6001,
+      "name": "RecoveryAlreadyActive",
+      "msg": "Recovery is already active"
+    },
+    {
+      "code": 6002,
+      "name": "NoActiveRecovery",
+      "msg": "No active recovery to execute or cancel"
+    },
+    {
+      "code": 6003,
+      "name": "TimelockNotExpired",
+      "msg": "Timelock period has not expired yet"
+    },
+    {
+      "code": 6004,
+      "name": "InvalidTimelockPeriod",
+      "msg": "Invalid timelock period (must be 1-90 days)"
+    },
+    {
+      "code": 6005,
+      "name": "Unauthorized",
+      "msg": "Unauthorized: only owner can perform this action"
+    }
+  ],
+  "types": [
+    {
+      "name": "CommitmentCreated",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "wallet",
+            "type": "pubkey"
+          },
+          {
+            "name": "commitment",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ProofVerified",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "wallet",
+            "type": "pubkey"
+          },
+          {
+            "name": "proof_hash",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "RecoveryCancelled",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "wallet",
+            "type": "pubkey"
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "RecoveryExecuted",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "wallet",
+            "type": "pubkey"
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "RecoveryInitiated",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "wallet",
+            "type": "pubkey"
+          },
+          {
+            "name": "recovery_commitment",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "unlock_time",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "WalletAccount",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "commitment",
+            "docs": [
+              "The privacy-preserving commitment (never reveals identity)"
+            ],
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "owner",
+            "docs": [
+              "The wallet owner (can cancel recovery)"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "created_at",
+            "docs": [
+              "When this wallet was created"
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "recovery_commitment",
+            "docs": [
+              "Recovery commitment (for time-locked recovery)"
+            ],
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "recovery_active",
+            "docs": [
+              "Whether recovery is currently active"
+            ],
+            "type": "bool"
+          },
+          {
+            "name": "recovery_initiated_at",
+            "docs": [
+              "When recovery was initiated"
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "recovery_unlock_at",
+            "docs": [
+              "When recovery can be executed"
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "recovery_executed_at",
+            "docs": [
+              "When recovery was executed (if applicable)"
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "bump",
+            "docs": [
+              "PDA bump seed"
+            ],
+            "type": "u8"
+          }
+        ]
+      }
+    }
+  ]
+}

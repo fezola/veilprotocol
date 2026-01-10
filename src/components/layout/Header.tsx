@@ -1,7 +1,10 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Icon } from "@iconify/react";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useWallet } from "@solana/wallet-adapter-react";
+import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
+import { useAuth } from "@/contexts/AuthContext";
 
 const navItems = [
   { label: "Why Privacy", href: "/why-privacy" },
@@ -12,7 +15,19 @@ const navItems = [
 
 export function Header() {
   const location = useLocation();
+  const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { connected } = useWallet();
+  const { isAuthenticated, veilWallet, logout } = useAuth();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+  };
+
+  const truncateAddress = (address: string) => {
+    return `${address.slice(0, 4)}...${address.slice(-4)}`;
+  };
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 glass-panel border-b">
@@ -41,19 +56,46 @@ export function Header() {
           ))}
         </nav>
 
+        {/* Desktop Actions */}
         <div className="hidden md:flex items-center gap-3">
-          <Link
-            to="/login"
-            className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-          >
-            Sign In
-          </Link>
-          <Link
-            to="/login"
-            className="px-4 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
-          >
-            Get Started
-          </Link>
+          {isAuthenticated ? (
+            <>
+              {/* Veil Wallet Address */}
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-success/10 border border-success/20">
+                <Icon icon="ph:shield-check" className="w-4 h-4 text-success" />
+                <span className="text-xs font-mono text-success">
+                  {truncateAddress(veilWallet || '')}
+                </span>
+              </div>
+
+              {/* Solana Wallet Connection */}
+              <WalletMultiButton className="!bg-primary hover:!bg-primary/90 !h-9 !text-sm" />
+
+              {/* Logout Button */}
+              <button
+                onClick={handleLogout}
+                className="p-2 text-muted-foreground hover:text-foreground transition-colors"
+                title="Logout"
+              >
+                <Icon icon="ph:sign-out" className="w-5 h-5" />
+              </button>
+            </>
+          ) : (
+            <>
+              <Link
+                to="/login"
+                className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Sign In
+              </Link>
+              <Link
+                to="/login"
+                className="px-4 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+              >
+                Get Started
+              </Link>
+            </>
+          )}
         </div>
 
         {/* Mobile Menu Button */}
@@ -92,14 +134,45 @@ export function Header() {
                   {item.label}
                 </Link>
               ))}
+
               <div className="border-t border-border my-2" />
-              <Link
-                to="/login"
-                onClick={() => setMobileMenuOpen(false)}
-                className="px-4 py-3 text-center text-sm font-medium bg-primary text-primary-foreground rounded-lg"
-              >
-                Get Started
-              </Link>
+
+              {isAuthenticated ? (
+                <>
+                  {/* Mobile Veil Wallet */}
+                  <div className="flex items-center gap-2 px-4 py-3 rounded-lg bg-success/10 border border-success/20">
+                    <Icon icon="ph:shield-check" className="w-4 h-4 text-success" />
+                    <span className="text-xs font-mono text-success">
+                      {truncateAddress(veilWallet || '')}
+                    </span>
+                  </div>
+
+                  {/* Mobile Wallet Connect */}
+                  <div className="px-4 py-2">
+                    <WalletMultiButton className="!w-full !bg-primary hover:!bg-primary/90" />
+                  </div>
+
+                  {/* Mobile Logout */}
+                  <button
+                    onClick={() => {
+                      handleLogout();
+                      setMobileMenuOpen(false);
+                    }}
+                    className="px-4 py-3 text-center text-sm font-medium text-destructive hover:bg-destructive/10 rounded-lg transition-colors flex items-center justify-center gap-2"
+                  >
+                    <Icon icon="ph:sign-out" className="w-4 h-4" />
+                    Logout
+                  </button>
+                </>
+              ) : (
+                <Link
+                  to="/login"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="px-4 py-3 text-center text-sm font-medium bg-primary text-primary-foreground rounded-lg"
+                >
+                  Get Started
+                </Link>
+              )}
             </nav>
           </motion.div>
         )}

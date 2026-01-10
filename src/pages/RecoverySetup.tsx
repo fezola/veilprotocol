@@ -3,20 +3,106 @@ import { Link, useNavigate } from "react-router-dom";
 import { Icon } from "@iconify/react";
 import { motion } from "framer-motion";
 import { PageLayout } from "@/components/layout/PageLayout";
+import { useAuth } from "@/contexts/AuthContext";
+import {
+  generateTimeLockRecovery,
+  generateShamirRecovery,
+  storeRecoveryKey,
+  storeShamirShares,
+  downloadRecoveryKey,
+  downloadShamirShare,
+  formatRecoveryKey,
+  type RecoveryKey,
+  type ShamirShare,
+} from "@/lib/recovery";
+import { useToast } from "@/hooks/use-toast";
 
 type RecoveryMethod = "timelock" | "shamir" | null;
 type SetupStep = "method" | "configure" | "confirm" | "complete";
 
 export default function RecoverySetup() {
   const navigate = useNavigate();
+  const { veilWallet } = useAuth();
+  const { toast } = useToast();
   const [method, setMethod] = useState<RecoveryMethod>(null);
   const [step, setStep] = useState<SetupStep>("method");
   const [timelockDays, setTimelockDays] = useState(7);
+  const [totalShares, setTotalShares] = useState(5);
+  const [threshold, setThreshold] = useState(3);
+  const [recoveryKey, setRecoveryKey] = useState<RecoveryKey | null>(null);
+  const [shamirShares, setShamirShares] = useState<ShamirShare[]>([]);
 
   const handleSetup = async () => {
+    if (!veilWallet) {
+      toast({
+        title: "Error",
+        description: "Please login first to set up recovery",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setStep("confirm");
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    setStep("complete");
+
+    // Simulate some processing time for UX
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+
+    try {
+      if (method === "timelock") {
+        // Generate real time-locked recovery
+        const recovery = generateTimeLockRecovery(timelockDays);
+        setRecoveryKey(recovery);
+        storeRecoveryKey(veilWallet, recovery);
+
+        toast({
+          title: "Time-Lock Recovery Created",
+          description: `Recovery key generated with ${timelockDays}-day time-lock`,
+        });
+      } else if (method === "shamir") {
+        // Generate real Shamir secret sharing
+        const { recoveryKey: key, shares } = generateShamirRecovery(
+          totalShares,
+          threshold
+        );
+        setRecoveryKey(key);
+        setShamirShares(shares);
+        storeRecoveryKey(veilWallet, key);
+        storeShamirShares(veilWallet, shares);
+
+        toast({
+          title: "Shamir Recovery Created",
+          description: `${totalShares} shares generated, ${threshold} needed for recovery`,
+        });
+      }
+
+      setStep("complete");
+    } catch (error) {
+      console.error("Recovery setup error:", error);
+      toast({
+        title: "Setup Failed",
+        description: "Failed to generate recovery key. Please try again.",
+        variant: "destructive",
+      });
+      setStep("configure");
+    }
+  };
+
+  const handleDownloadKey = () => {
+    if (recoveryKey) {
+      downloadRecoveryKey(recoveryKey);
+      toast({
+        title: "Recovery Key Downloaded",
+        description: "Store this file securely offline",
+      });
+    }
+  };
+
+  const handleDownloadShare = (share: ShamirShare) => {
+    downloadShamirShare(share, `Guardian ${share.index}`);
+    toast({
+      title: `Share ${share.index} Downloaded`,
+      description: "Distribute this share to the guardian",
+    });
   };
 
   return (
@@ -24,6 +110,17 @@ export default function RecoverySetup() {
       <div className="pt-24 pb-16">
         <div className="container mx-auto px-4">
           <div className="max-w-2xl mx-auto">
+            {/* Back Button */}
+            <motion.button
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              onClick={() => navigate('/dashboard')}
+              className="mb-6 flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <Icon icon="ph:arrow-left" className="w-5 h-5" />
+              <span className="text-sm font-medium">Back to Dashboard</span>
+            </motion.button>
+
             {/* Header */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -37,7 +134,7 @@ export default function RecoverySetup() {
               <p className="text-muted-foreground">
                 {step === "method" && "Choose how you want to recover your wallet if you lose access."}
                 {step === "configure" && "Configure your recovery settings."}
-                {step === "confirm" && "Setting up your recovery method..."}
+                {step === "confirm" && "Generating cryptographic recovery keys..."}
                 {step === "complete" && "Your recovery is now configured."}
               </p>
             </motion.div>
@@ -96,7 +193,7 @@ export default function RecoverySetup() {
                     <div className="flex-1">
                       <h3 className="font-semibold text-lg mb-1">Shamir Secret Sharing</h3>
                       <p className="text-muted-foreground text-sm mb-4">
-                        Split your recovery key into multiple shares. Reconstruct with a threshold 
+                        Split your recovery key into multiple shares. Reconstruct with a threshold
                         without revealing who holds shares.
                       </p>
                       <div className="flex flex-wrap gap-2">
@@ -119,7 +216,7 @@ export default function RecoverySetup() {
                     <Icon icon="ph:info" className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
                     <div>
                       <p className="text-sm text-muted-foreground">
-                        <span className="text-primary font-medium">Privacy Guarantee:</span> Unlike traditional social recovery, 
+                        <span className="text-primary font-medium">Privacy Guarantee:</span> Unlike traditional social recovery,
                         Veil never exposes who your guardians are or that a recovery relationship exists.
                       </p>
                     </div>
@@ -128,7 +225,7 @@ export default function RecoverySetup() {
               </motion.div>
             )}
 
-            {/* Configuration */}
+            {/* Time-Lock Configuration */}
             {step === "configure" && method === "timelock" && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
@@ -167,15 +264,15 @@ export default function RecoverySetup() {
                   <ol className="space-y-2 text-sm text-muted-foreground">
                     <li className="flex items-start gap-2">
                       <span className="w-5 h-5 rounded-full bg-primary/10 text-primary text-xs flex items-center justify-center flex-shrink-0">1</span>
-                      A recovery key is generated locally
+                      A recovery key is generated using cryptographically secure random bytes
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="w-5 h-5 rounded-full bg-primary/10 text-primary text-xs flex items-center justify-center flex-shrink-0">2</span>
-                      Store it securely (we never see it)
+                      Store it securely offline (we never see it)
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="w-5 h-5 rounded-full bg-primary/10 text-primary text-xs flex items-center justify-center flex-shrink-0">3</span>
-                      If used, a {timelockDays}-day countdown begins
+                      If used, a {timelockDays}-day countdown begins on-chain
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="w-5 h-5 rounded-full bg-primary/10 text-primary text-xs flex items-center justify-center flex-shrink-0">4</span>
@@ -205,6 +302,7 @@ export default function RecoverySetup() {
               </motion.div>
             )}
 
+            {/* Shamir Configuration */}
             {step === "configure" && method === "shamir" && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
@@ -219,7 +317,12 @@ export default function RecoverySetup() {
                     {[3, 5, 7].map((shares) => (
                       <button
                         key={shares}
-                        className="py-3 rounded-lg border border-border hover:border-primary/30 text-sm font-medium transition-colors"
+                        onClick={() => setTotalShares(shares)}
+                        className={`py-3 rounded-lg border text-sm font-medium transition-colors ${
+                          totalShares === shares
+                            ? "border-primary bg-primary/10 text-primary"
+                            : "border-border hover:border-primary/30"
+                        }`}
                       >
                         {shares} shares
                       </button>
@@ -230,18 +333,49 @@ export default function RecoverySetup() {
                 <div className="mb-6">
                   <label className="block text-sm font-medium mb-3">Recovery Threshold</label>
                   <div className="grid grid-cols-3 gap-3">
-                    {[2, 3, 4].map((threshold) => (
+                    {[2, 3, 4].map((t) => (
                       <button
-                        key={threshold}
-                        className="py-3 rounded-lg border border-border hover:border-primary/30 text-sm font-medium transition-colors"
+                        key={t}
+                        onClick={() => setThreshold(t)}
+                        disabled={t > totalShares}
+                        className={`py-3 rounded-lg border text-sm font-medium transition-colors ${
+                          threshold === t && t <= totalShares
+                            ? "border-primary bg-primary/10 text-primary"
+                            : "border-border hover:border-primary/30"
+                        } ${t > totalShares ? "opacity-50 cursor-not-allowed" : ""}`}
                       >
-                        {threshold} of 5
+                        {t} of {totalShares}
                       </button>
                     ))}
                   </div>
                   <p className="text-xs text-muted-foreground mt-2">
                     This many shares are needed to recover your wallet.
                   </p>
+                </div>
+
+                <div className="p-4 rounded-lg bg-secondary mb-6">
+                  <h3 className="font-medium text-sm mb-3 flex items-center gap-2">
+                    <Icon icon="ph:info" className="w-4 h-4 text-primary" />
+                    How It Works
+                  </h3>
+                  <ol className="space-y-2 text-sm text-muted-foreground">
+                    <li className="flex items-start gap-2">
+                      <span className="w-5 h-5 rounded-full bg-primary/10 text-primary text-xs flex items-center justify-center flex-shrink-0">1</span>
+                      Recovery key split using Shamir Secret Sharing (polynomial over GF(256))
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="w-5 h-5 rounded-full bg-primary/10 text-primary text-xs flex items-center justify-center flex-shrink-0">2</span>
+                      Distribute {totalShares} shares to guardians (off-chain, private)
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="w-5 h-5 rounded-full bg-primary/10 text-primary text-xs flex items-center justify-center flex-shrink-0">3</span>
+                      Only {threshold} shares needed to reconstruct the recovery key
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="w-5 h-5 rounded-full bg-primary/10 text-primary text-xs flex items-center justify-center flex-shrink-0">4</span>
+                      Guardian identities NEVER recorded on-chain
+                    </li>
+                  </ol>
                 </div>
 
                 <div className="flex gap-4">
@@ -275,31 +409,137 @@ export default function RecoverySetup() {
                 <div className="w-16 h-16 rounded-full border-2 border-primary border-t-transparent animate-spin mx-auto mb-6" />
                 <h2 className="font-semibold text-lg mb-2">Generating Recovery</h2>
                 <p className="text-muted-foreground text-sm">
-                  Creating cryptographic commitments locally...
+                  Creating cryptographic commitments using SHA-256...
                 </p>
               </motion.div>
             )}
 
-            {/* Complete */}
-            {step === "complete" && (
+            {/* Time-Lock Complete */}
+            {step === "complete" && method === "timelock" && recoveryKey && (
               <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="glass-panel rounded-xl p-8 text-center"
+                className="glass-panel rounded-xl p-8"
               >
                 <div className="w-16 h-16 rounded-full bg-success/10 flex items-center justify-center mx-auto mb-6 success-glow">
                   <Icon icon="ph:check-circle-fill" className="w-8 h-8 text-success" />
                 </div>
-                <h2 className="font-semibold text-xl mb-2">Recovery Configured</h2>
-                <p className="text-muted-foreground mb-6">
-                  Your recovery method is now active. Store your recovery key securely.
+                <h2 className="font-semibold text-xl mb-2 text-center">Recovery Configured</h2>
+                <p className="text-muted-foreground mb-6 text-center">
+                  Your time-locked recovery is now active. Download and store your recovery key securely.
                 </p>
 
-                <div className="bg-secondary rounded-lg p-4 mb-6">
-                  <p className="text-xs text-muted-foreground mb-2">Recovery Key (demo)</p>
+                <div className="bg-secondary rounded-lg p-4 mb-4">
+                  <p className="text-xs text-muted-foreground mb-2">Recovery Key</p>
                   <p className="font-mono text-sm break-all">
-                    veil_rec_k1_8xNmPqRsTuVwXyZ2aB3cD4eF5gH6iJ7kL0
+                    {formatRecoveryKey(recoveryKey.key, recoveryKey.method)}
                   </p>
+                </div>
+
+                <div className="bg-secondary rounded-lg p-4 mb-6">
+                  <p className="text-xs text-muted-foreground mb-2">Commitment Hash (On-Chain)</p>
+                  <p className="font-mono text-xs break-all text-muted-foreground">
+                    {recoveryKey.commitment}
+                  </p>
+                </div>
+
+                <div className="p-4 rounded-lg bg-warning/5 border border-warning/20 mb-6">
+                  <div className="flex items-start gap-3">
+                    <Icon icon="ph:warning" className="w-5 h-5 text-warning flex-shrink-0 mt-0.5" />
+                    <div className="text-sm">
+                      <p className="font-medium text-warning mb-1">Important Security Notice</p>
+                      <ul className="space-y-1 text-muted-foreground text-xs">
+                        <li>• Store this recovery key offline and encrypted</li>
+                        <li>• Anyone with this key can recover your wallet after {recoveryKey.metadata?.timelockDays} days</li>
+                        <li>• The commitment hash is public on-chain but reveals nothing about the key</li>
+                        <li>• You can cancel recovery attempts during the time-lock period</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <button
+                    onClick={handleDownloadKey}
+                    className="flex-1 py-3 border border-primary text-primary font-medium rounded-lg hover:bg-primary/10 transition-colors flex items-center justify-center gap-2"
+                  >
+                    <Icon icon="ph:download-simple" className="w-5 h-5" />
+                    Download Key
+                  </button>
+                  <Link
+                    to="/recovery-execute"
+                    className="flex-1 py-3 border border-border font-medium rounded-lg hover:bg-secondary transition-colors flex items-center justify-center gap-2"
+                  >
+                    <Icon icon="ph:play" className="w-5 h-5" />
+                    Test Recovery
+                  </Link>
+                  <Link
+                    to="/dashboard"
+                    className="flex-1 py-3 bg-primary text-primary-foreground font-medium rounded-lg hover:bg-primary/90 transition-colors flex items-center justify-center gap-2"
+                  >
+                    <Icon icon="ph:layout" className="w-5 h-5" />
+                    Dashboard
+                  </Link>
+                </div>
+              </motion.div>
+            )}
+
+            {/* Shamir Complete */}
+            {step === "complete" && method === "shamir" && recoveryKey && shamirShares.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="glass-panel rounded-xl p-8"
+              >
+                <div className="w-16 h-16 rounded-full bg-success/10 flex items-center justify-center mx-auto mb-6 success-glow">
+                  <Icon icon="ph:check-circle-fill" className="w-8 h-8 text-success" />
+                </div>
+                <h2 className="font-semibold text-xl mb-2 text-center">Shamir Shares Generated</h2>
+                <p className="text-muted-foreground mb-6 text-center">
+                  {shamirShares.length} shares created. Distribute them to guardians off-chain.
+                </p>
+
+                <div className="bg-secondary rounded-lg p-4 mb-4">
+                  <p className="text-xs text-muted-foreground mb-2">Configuration</p>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm">Total Shares:</span>
+                    <span className="font-mono text-sm">{shamirShares.length}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm">Threshold:</span>
+                    <span className="font-mono text-sm">{shamirShares[0].threshold} of {shamirShares.length}</span>
+                  </div>
+                </div>
+
+                <div className="bg-secondary rounded-lg p-4 mb-6">
+                  <p className="text-xs text-muted-foreground mb-3">Download Shares</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {shamirShares.map((share) => (
+                      <button
+                        key={share.index}
+                        onClick={() => handleDownloadShare(share)}
+                        className="py-2 px-3 border border-border rounded-lg hover:bg-primary/10 hover:border-primary/30 transition-colors flex items-center justify-center gap-2 text-sm"
+                      >
+                        <Icon icon="ph:download-simple" className="w-4 h-4" />
+                        Share {share.index}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-lg bg-warning/5 border border-warning/20 mb-6">
+                  <div className="flex items-start gap-3">
+                    <Icon icon="ph:warning" className="w-5 h-5 text-warning flex-shrink-0 mt-0.5" />
+                    <div className="text-sm">
+                      <p className="font-medium text-warning mb-1">Distribution Instructions</p>
+                      <ul className="space-y-1 text-muted-foreground text-xs">
+                        <li>• Send each share to a different guardian (Signal, email, etc.)</li>
+                        <li>• Guardian identities are NEVER recorded on-chain</li>
+                        <li>• {shamirShares[0].threshold} shares are needed to recover the wallet</li>
+                        <li>• Individual shares reveal nothing about the recovery key</li>
+                      </ul>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="flex flex-col sm:flex-row gap-4">
@@ -315,7 +555,7 @@ export default function RecoverySetup() {
                     className="flex-1 py-3 bg-primary text-primary-foreground font-medium rounded-lg hover:bg-primary/90 transition-colors flex items-center justify-center gap-2"
                   >
                     <Icon icon="ph:layout" className="w-5 h-5" />
-                    Go to Dashboard
+                    Dashboard
                   </Link>
                 </div>
               </motion.div>

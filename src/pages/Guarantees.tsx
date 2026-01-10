@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Icon } from "@iconify/react";
 import { motion } from "framer-motion";
 import { PageLayout } from "@/components/layout/PageLayout";
@@ -51,10 +51,23 @@ const attackerCannot = [
 ];
 
 export default function Guarantees() {
+  const navigate = useNavigate();
+
   return (
     <PageLayout>
       <div className="pt-24 pb-16">
         <div className="container mx-auto px-4">
+          {/* Back Button */}
+          <motion.button
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            onClick={() => navigate('/dashboard')}
+            className="mb-6 flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <Icon icon="ph:arrow-left" className="w-5 h-5" />
+            <span className="text-sm font-medium">Back to Dashboard</span>
+          </motion.button>
+
           {/* Header */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}

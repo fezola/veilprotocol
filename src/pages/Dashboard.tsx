@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { PageLayout } from "@/components/layout/PageLayout";
 import { StatusCard } from "@/components/ui/StatusCard";
 import { ZKProofVisualizer } from "@/components/ui/ZKProofVisualizer";
+import { PrivacyVerification } from "@/components/PrivacyVerification";
 import { generateTransactionProof, ZKProofData } from "@/lib/zkProof";
 
 type ProofStage = "idle" | "hashing" | "generating" | "verifying" | "complete";
@@ -72,6 +73,23 @@ export default function Dashboard() {
               <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-success/10 border border-success/20">
                 <span className="status-indicator status-indicator-active" />
                 <span className="text-sm font-medium text-success">Session Active</span>
+              </div>
+            </motion.div>
+
+            {/* Transparency Disclaimer */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className="mt-4 p-3 rounded-lg bg-primary/5 border border-primary/10 flex items-start gap-3"
+            >
+              <Icon icon="ph:info" className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+              <div className="text-sm">
+                <p className="text-foreground font-medium mb-1">Demo Mode</p>
+                <p className="text-muted-foreground">
+                  ZK proofs shown are structurally correct simulations. Production would use snarkjs + CIRCOM circuits.
+                  The Solana program is deployed to devnet. <Link to="/docs" className="text-primary hover:underline">Learn more</Link>
+                </p>
               </div>
             </motion.div>
           </div>
@@ -334,6 +352,16 @@ export default function Dashboard() {
               </motion.div>
             </div>
           </div>
+
+          {/* Privacy Verification Section - Full Width */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.7 }}
+            className="mt-8"
+          >
+            <PrivacyVerification />
+          </motion.div>
         </div>
       </div>
     </PageLayout>

@@ -1,0 +1,14 @@
+\\?\C:\Users\Hp\aegis-shield\programs\veil-protocol\target\release\deps\libserde-0367044ab8252e77.rmeta: C:\Users\Hp\.cargo\registry\src\index.crates.io-6f17d22bba15001f\serde-1.0.228\src\lib.rs C:\Users\Hp\.cargo\registry\src\index.crates.io-6f17d22bba15001f\serde-1.0.228\src\integer128.rs C:\Users\Hp\.cargo\registry\src\index.crates.io-6f17d22bba15001f\serde-1.0.228\src\private\mod.rs C:\Users\Hp\.cargo\registry\src\index.crates.io-6f17d22bba15001f\serde-1.0.228\src\private\de.rs C:\Users\Hp\.cargo\registry\src\index.crates.io-6f17d22bba15001f\serde-1.0.228\src\private\ser.rs \\?\C:\Users\Hp\aegis-shield\programs\veil-protocol\target\release\build\serde-70c0731cef5327ca\out\private.rs
+
+\\?\C:\Users\Hp\aegis-shield\programs\veil-protocol\target\release\deps\libserde-0367044ab8252e77.rlib: C:\Users\Hp\.cargo\registry\src\index.crates.io-6f17d22bba15001f\serde-1.0.228\src\lib.rs C:\Users\Hp\.cargo\registry\src\index.crates.io-6f17d22bba15001f\serde-1.0.228\src\integer128.rs C:\Users\Hp\.cargo\registry\src\index.crates.io-6f17d22bba15001f\serde-1.0.228\src\private\mod.rs C:\Users\Hp\.cargo\registry\src\index.crates.io-6f17d22bba15001f\serde-1.0.228\src\private\de.rs C:\Users\Hp\.cargo\registry\src\index.crates.io-6f17d22bba15001f\serde-1.0.228\src\private\ser.rs \\?\C:\Users\Hp\aegis-shield\programs\veil-protocol\target\release\build\serde-70c0731cef5327ca\out\private.rs
+
+\\?\C:\Users\Hp\aegis-shield\programs\veil-protocol\target\release\deps\serde-0367044ab8252e77.d: C:\Users\Hp\.cargo\registry\src\index.crates.io-6f17d22bba15001f\serde-1.0.228\src\lib.rs C:\Users\Hp\.cargo\registry\src\index.crates.io-6f17d22bba15001f\serde-1.0.228\src\integer128.rs C:\Users\Hp\.cargo\registry\src\index.crates.io-6f17d22bba15001f\serde-1.0.228\src\private\mod.rs C:\Users\Hp\.cargo\registry\src\index.crates.io-6f17d22bba15001f\serde-1.0.228\src\private\de.rs C:\Users\Hp\.cargo\registry\src\index.crates.io-6f17d22bba15001f\serde-1.0.228\src\private\ser.rs \\?\C:\Users\Hp\aegis-shield\programs\veil-protocol\target\release\build\serde-70c0731cef5327ca\out\private.rs
+
+C:\Users\Hp\.cargo\registry\src\index.crates.io-6f17d22bba15001f\serde-1.0.228\src\lib.rs:
+C:\Users\Hp\.cargo\registry\src\index.crates.io-6f17d22bba15001f\serde-1.0.228\src\integer128.rs:
+C:\Users\Hp\.cargo\registry\src\index.crates.io-6f17d22bba15001f\serde-1.0.228\src\private\mod.rs:
+C:\Users\Hp\.cargo\registry\src\index.crates.io-6f17d22bba15001f\serde-1.0.228\src\private\de.rs:
+C:\Users\Hp\.cargo\registry\src\index.crates.io-6f17d22bba15001f\serde-1.0.228\src\private\ser.rs:
+\\?\C:\Users\Hp\aegis-shield\programs\veil-protocol\target\release\build\serde-70c0731cef5327ca\out\private.rs:
+
+# env-dep:OUT_DIR=\\\\?\\C:\\Users\\Hp\\aegis-shield\\programs\\veil-protocol\\target\\release\\build\\serde-70c0731cef5327ca\\out
