@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Icon } from "@iconify/react";
 import { motion } from "framer-motion";
@@ -13,13 +13,20 @@ type ProofStage = "idle" | "hashing" | "generating" | "verifying" | "complete";
 
 export default function Login() {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, isAuthenticated, veilWallet } = useAuth();
   const [method, setMethod] = useState<AuthMethod>(null);
   const [step, setStep] = useState<AuthStep>("method");
   const [email, setEmail] = useState("");
   const [proofStage, setProofStage] = useState<ProofStage>("idle");
   const [proof, setProof] = useState<ZKProofData | null>(null);
   const [proofDuration, setProofDuration] = useState<number>(0);
+
+  // Redirect to dashboard if already authenticated (e.g., from recovery)
+  useEffect(() => {
+    if (isAuthenticated && veilWallet) {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [isAuthenticated, veilWallet, navigate]);
 
   const runZKProofGeneration = useCallback(async (identifier: string) => {
     // Stage 1: Hashing

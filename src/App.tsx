@@ -16,6 +16,7 @@ import RecoverySetup from "./pages/RecoverySetup";
 import RecoveryExecute from "./pages/RecoveryExecute";
 import Guarantees from "./pages/Guarantees";
 import Docs from "./pages/Docs";
+import ShadowPayExplained from "./pages/ShadowPayExplained";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -74,6 +75,7 @@ const App = () => (
               />
               <Route path="/guarantees" element={<Guarantees />} />
               <Route path="/docs" element={<Docs />} />
+              <Route path="/shadowpay-explained" element={<ShadowPayExplained />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

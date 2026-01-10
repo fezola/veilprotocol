@@ -6,6 +6,7 @@ import { PageLayout } from "@/components/layout/PageLayout";
 import { StatusCard } from "@/components/ui/StatusCard";
 import { ZKProofVisualizer } from "@/components/ui/ZKProofVisualizer";
 import { PrivacyVerification } from "@/components/PrivacyVerification";
+import { PrivatePaymentDialog } from "@/components/ui/PrivatePaymentDialog";
 import { generateTransactionProof, ZKProofData } from "@/lib/zkProof";
 
 type ProofStage = "idle" | "hashing" | "generating" | "verifying" | "complete";
@@ -16,6 +17,7 @@ export default function Dashboard() {
   const [proofStage, setProofStage] = useState<ProofStage>("idle");
   const [txProof, setTxProof] = useState<ZKProofData | null>(null);
   const [proofDuration, setProofDuration] = useState<number>(0);
+  const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
 
   const handleTransaction = useCallback(async () => {
     setIsTransacting(true);
@@ -131,6 +133,86 @@ export default function Dashboard() {
                     value="Private (if set up)"
                     status="hidden"
                   />
+                </div>
+              </motion.div>
+
+              {/* ShadowPay Integration Showcase */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.15 }}
+                className="glass-panel rounded-xl p-6 border-2 border-success/20"
+              >
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-xl bg-success/10 flex items-center justify-center">
+                      <Icon icon="ph:paper-plane-tilt" className="w-6 h-6 text-success" />
+                    </div>
+                    <div>
+                      <h2 className="text-lg font-semibold flex items-center gap-2">
+                        Private Transfers
+                        <span className="text-xs px-2 py-1 rounded-full bg-success/10 text-success font-medium">
+                          NEW
+                        </span>
+                      </h2>
+                      <p className="text-xs text-muted-foreground">
+                        Powered by ShadowPay
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <p className="text-sm text-muted-foreground">
+                    Send value privately with amount hiding on-chain. Complete privacy stack:
+                    identity (ZK proofs) + infrastructure (Helius) + transfers (ShadowPay).
+                  </p>
+
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="p-3 rounded-lg bg-success/5 border border-success/20">
+                      <Icon icon="ph:eye-slash" className="w-5 h-5 text-success mb-2" />
+                      <p className="text-xs font-medium mb-1">Amount Hidden</p>
+                      <p className="text-xs text-muted-foreground">Private on-chain</p>
+                    </div>
+                    <div className="p-3 rounded-lg bg-success/5 border border-success/20">
+                      <Icon icon="ph:shield-check" className="w-5 h-5 text-success mb-2" />
+                      <p className="text-xs font-medium mb-1">Identity Safe</p>
+                      <p className="text-xs text-muted-foreground">No leakage</p>
+                    </div>
+                    <div className="p-3 rounded-lg bg-success/5 border border-success/20">
+                      <Icon icon="ph:lock" className="w-5 h-5 text-success mb-2" />
+                      <p className="text-xs font-medium mb-1">No Linkage</p>
+                      <p className="text-xs text-muted-foreground">Wallets private</p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      onClick={() => setIsPaymentDialogOpen(true)}
+                      className="py-3 bg-success text-white font-medium rounded-lg hover:bg-success/90 transition-colors flex items-center justify-center gap-2"
+                    >
+                      <Icon icon="ph:paper-plane-tilt" className="w-5 h-5" />
+                      Try Demo
+                    </button>
+                    <Link
+                      to="/shadowpay-explained"
+                      className="py-3 border border-success/30 text-success font-medium rounded-lg hover:bg-success/10 transition-colors flex items-center justify-center gap-2"
+                    >
+                      <Icon icon="ph:book-open" className="w-5 h-5" />
+                      How It Works
+                    </Link>
+                  </div>
+
+                  <div className="pt-3 border-t border-border">
+                    <p className="text-xs text-muted-foreground flex items-start gap-2">
+                      <Icon icon="ph:info" className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                      <span>
+                        <strong className="text-foreground">Privacy at every stage:</strong> Login
+                        (ZK proofs), Infrastructure (Helius private RPC), Recovery (Shamir + no lists),
+                        Transfers (ShadowPay amount hiding).
+                      </span>
+                    </p>
+                  </div>
                 </div>
               </motion.div>
 
@@ -348,6 +430,20 @@ export default function Dashboard() {
               >
                 <h2 className="text-lg font-semibold mb-4">Quick Actions</h2>
                 <div className="space-y-3">
+                  <button
+                    onClick={() => setIsPaymentDialogOpen(true)}
+                    className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-secondary transition-colors text-left"
+                  >
+                    <div className="w-10 h-10 rounded-lg bg-success/10 flex items-center justify-center">
+                      <Icon icon="ph:paper-plane-tilt" className="w-5 h-5 text-success" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-medium text-sm">Send Privately</p>
+                      <p className="text-xs text-muted-foreground">Powered by ShadowPay</p>
+                    </div>
+                    <Icon icon="ph:caret-right" className="w-4 h-4 text-muted-foreground" />
+                  </button>
+
                   <Link
                     to="/recovery-setup"
                     className="flex items-center gap-3 p-3 rounded-lg hover:bg-secondary transition-colors"
@@ -455,6 +551,12 @@ export default function Dashboard() {
           </motion.div>
         </div>
       </div>
+
+      {/* Private Payment Dialog */}
+      <PrivatePaymentDialog
+        isOpen={isPaymentDialogOpen}
+        onClose={() => setIsPaymentDialogOpen(false)}
+      />
     </PageLayout>
   );
 }
