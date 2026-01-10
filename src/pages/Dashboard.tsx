@@ -166,24 +166,67 @@ export default function Dashboard() {
                 transition={{ delay: 0.3 }}
                 className="glass-panel rounded-xl p-6"
               >
-                <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                  <Icon icon="ph:lightning" className="w-5 h-5 text-primary" />
-                  Perform Private Action
-                </h2>
-                
+                <div className="flex items-start justify-between mb-4">
+                  <div>
+                    <h2 className="text-lg font-semibold flex items-center gap-2">
+                      <Icon icon="ph:lightning" className="w-5 h-5 text-primary" />
+                      ZK Proof Demo
+                    </h2>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      See how privacy-preserving transactions work
+                    </p>
+                  </div>
+                  <div className="px-2 py-1 rounded-full bg-warning/10 border border-warning/20 text-xs font-medium text-warning">
+                    Demo
+                  </div>
+                </div>
+
                 {!transactionComplete && !isTransacting && (
                   <div>
-                    <p className="text-muted-foreground text-sm mb-6">
-                      Execute a test transaction to see privacy in action. This generates a real ZK proof 
-                      that proves you control the wallet without revealing your identity.
-                    </p>
-                    
+                    {/* What This Does - Educational */}
+                    <div className="mb-4 p-4 rounded-lg bg-primary/5 border border-primary/10">
+                      <h3 className="text-sm font-semibold text-primary mb-2 flex items-center gap-2">
+                        <Icon icon="ph:info" className="w-4 h-4" />
+                        What This Demonstrates
+                      </h3>
+                      <ul className="space-y-1.5 text-xs text-muted-foreground">
+                        <li className="flex items-start gap-2">
+                          <Icon icon="ph:check" className="w-3.5 h-3.5 text-success flex-shrink-0 mt-0.5" />
+                          <span>Generates a real ZK proof structure (Groth16 format)</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <Icon icon="ph:check" className="w-3.5 h-3.5 text-success flex-shrink-0 mt-0.5" />
+                          <span>Proves you control a wallet WITHOUT revealing identity</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <Icon icon="ph:check" className="w-3.5 h-3.5 text-success flex-shrink-0 mt-0.5" />
+                          <span>Shows the 4 stages: Hash → Generate → Verify → Complete</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <Icon icon="ph:check" className="w-3.5 h-3.5 text-success flex-shrink-0 mt-0.5" />
+                          <span>No real transaction sent (demo of privacy architecture)</span>
+                        </li>
+                      </ul>
+                    </div>
+
+                    {/* What Production Would Add */}
+                    <div className="mb-6 p-3 rounded-lg bg-secondary border border-border">
+                      <h4 className="text-xs font-semibold mb-2 flex items-center gap-1.5">
+                        <Icon icon="ph:rocket-launch" className="w-3.5 h-3.5" />
+                        Production Enhancement
+                      </h4>
+                      <p className="text-xs text-muted-foreground">
+                        In production, this would use <span className="font-mono text-primary">snarkjs</span> to generate
+                        fully verified ZK proofs and submit real transactions to Solana with privacy guarantees.
+                      </p>
+                    </div>
+
                     <button
                       onClick={handleTransaction}
                       className="w-full py-4 bg-primary text-primary-foreground font-medium rounded-lg hover:bg-primary/90 transition-colors flex items-center justify-center gap-2"
                     >
-                      <Icon icon="ph:paper-plane-tilt" className="w-5 h-5" />
-                      Execute Private Transaction
+                      <Icon icon="ph:play" className="w-5 h-5" />
+                      Generate ZK Proof (Demo)
                     </button>
                   </div>
                 )}
@@ -204,13 +247,48 @@ export default function Dashboard() {
                     <div className="w-16 h-16 rounded-full bg-success/10 flex items-center justify-center mx-auto mb-4 success-glow">
                       <Icon icon="ph:check-circle-fill" className="w-8 h-8 text-success" />
                     </div>
-                    <h3 className="font-semibold mb-2">Transaction Complete</h3>
+                    <h3 className="font-semibold mb-2">ZK Proof Generated!</h3>
                     <p className="text-sm text-muted-foreground mb-4">
-                      Your transaction was executed with a real ZK proof. No identity leaked.
+                      Successfully demonstrated privacy-preserving transaction flow
                     </p>
-                    
+
+                    {/* What Just Happened */}
+                    <div className="mb-4 p-4 rounded-lg bg-success/5 border border-success/20 text-left">
+                      <h4 className="text-sm font-semibold text-success mb-3 flex items-center gap-2">
+                        <Icon icon="ph:shield-check" className="w-4 h-4" />
+                        What Just Happened
+                      </h4>
+                      <ul className="space-y-2 text-xs text-muted-foreground">
+                        <li className="flex items-start gap-2">
+                          <Icon icon="ph:check" className="w-3.5 h-3.5 text-success flex-shrink-0 mt-0.5" />
+                          <span>
+                            <strong className="text-foreground">Hashed Commitment:</strong> Created a cryptographic hash of your wallet commitment
+                          </span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <Icon icon="ph:check" className="w-3.5 h-3.5 text-success flex-shrink-0 mt-0.5" />
+                          <span>
+                            <strong className="text-foreground">Generated Proof:</strong> Built a Groth16 ZK proof structure (pi_a, pi_b, pi_c components)
+                          </span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <Icon icon="ph:check" className="w-3.5 h-3.5 text-success flex-shrink-0 mt-0.5" />
+                          <span>
+                            <strong className="text-foreground">Verified Structure:</strong> Validated the proof follows correct cryptographic format
+                          </span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <Icon icon="ph:check" className="w-3.5 h-3.5 text-success flex-shrink-0 mt-0.5" />
+                          <span>
+                            <strong className="text-foreground">Privacy Preserved:</strong> Your identity remains hidden (only commitment is public)
+                          </span>
+                        </li>
+                      </ul>
+                    </div>
+
                     {txProof && (
-                      <div className="bg-secondary rounded-lg p-4 text-left space-y-2">
+                      <div className="bg-secondary rounded-lg p-4 text-left space-y-2.5 mb-4">
+                        <div className="text-xs font-semibold text-muted-foreground mb-2">Proof Details</div>
                         <div className="flex items-center justify-between text-sm">
                           <span className="text-muted-foreground">Protocol</span>
                           <span className="font-mono text-xs bg-primary/10 text-primary px-2 py-1 rounded">
@@ -218,16 +296,28 @@ export default function Dashboard() {
                           </span>
                         </div>
                         <div className="flex items-center justify-between text-sm">
-                          <span className="text-muted-foreground">TX Commitment</span>
-                          <span className="font-mono text-xs">
-                            0x{txProof.commitment.slice(0, 12)}...
+                          <span className="text-muted-foreground">Curve</span>
+                          <span className="font-mono text-xs bg-primary/10 text-primary px-2 py-1 rounded">
+                            {txProof.proof.curve.toUpperCase()}
                           </span>
                         </div>
                         <div className="flex items-center justify-between text-sm">
-                          <span className="text-muted-foreground">Proof Time</span>
+                          <span className="text-muted-foreground">Commitment Hash</span>
+                          <span className="font-mono text-xs">
+                            {txProof.commitment.slice(0, 8)}...{txProof.commitment.slice(-6)}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-muted-foreground">Generation Time</span>
                           <span className="font-mono text-xs text-success">
                             {proofDuration.toFixed(0)}ms
                           </span>
+                        </div>
+                        <div className="mt-3 pt-3 border-t border-border">
+                          <p className="text-xs text-muted-foreground">
+                            <Icon icon="ph:info" className="w-3 h-3 inline mr-1" />
+                            This proof structure matches real Groth16 ZK-SNARKs used in production privacy systems.
+                          </p>
                         </div>
                       </div>
                     )}
@@ -238,9 +328,10 @@ export default function Dashboard() {
                         setTxProof(null);
                         setProofStage("idle");
                       }}
-                      className="mt-4 text-sm text-primary hover:underline"
+                      className="w-full py-2.5 bg-primary/10 text-primary font-medium rounded-lg hover:bg-primary/20 transition-colors flex items-center justify-center gap-2"
                     >
-                      Execute another transaction
+                      <Icon icon="ph:arrows-clockwise" className="w-4 h-4" />
+                      Generate Another Proof
                     </button>
                   </div>
                 )}

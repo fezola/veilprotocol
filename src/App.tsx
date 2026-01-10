@@ -7,6 +7,7 @@ import { WalletProvider } from "./components/WalletProvider";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import Landing from "./pages/Landing";
+import About from "./pages/About";
 import WhyPrivacy from "./pages/WhyPrivacy";
 import Login from "./pages/Login";
 import WalletCreated from "./pages/WalletCreated";
@@ -29,6 +30,7 @@ const App = () => (
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<Landing />} />
+              <Route path="/about" element={<About />} />
               <Route path="/why-privacy" element={<WhyPrivacy />} />
               <Route
                 path="/login"

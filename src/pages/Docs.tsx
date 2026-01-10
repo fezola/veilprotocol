@@ -5,498 +5,344 @@ import { PageLayout } from "@/components/layout/PageLayout";
 
 const sections = [
   {
-    id: "overview",
-    title: "Overview",
+    id: "introduction",
+    title: "Introduction",
     icon: "ph:book-open",
-    content: `
-## What is Veil Protocol?
-
-Veil Protocol is a privacy infrastructure layer for Solana wallets. It allows users to:
-
-- **Authenticate** without revealing identity
-- **Transact** without linking balances to real-world identity
-- **Recover** wallets without exposing social graphs or guardians
-
-### Not a Wallet
-
-Veil is not a full wallet. It's a privacy layer that sits on top of existing Solana wallets, adding identity protection at every step.
-
-### Not Private Payments
-
-Unlike mixing services or private payment protocols, Veil focuses on the **entire wallet lifecycle**—from login to recovery.
-    `,
+    content: {
+      title: "Veil Protocol Documentation",
+      description: "Privacy-preserving wallet infrastructure for Solana",
+      sections: [
+        {
+          heading: "What is Veil Protocol?",
+          content: [
+            "Veil Protocol is a privacy layer for Solana wallets that enables authentication and recovery without revealing user identity on-chain.",
+            "Unlike traditional wallets that expose your email, social accounts, and guardian relationships, Veil uses cryptographic commitments to keep your identity private while maintaining full wallet functionality."
+          ]
+        },
+        {
+          heading: "Core Capabilities",
+          items: [
+            { label: "Private Authentication", desc: "Login with email or passkey without on-chain identity exposure" },
+            { label: "Deterministic Wallets", desc: "Same credentials always generate the same wallet address" },
+            { label: "Private Recovery", desc: "Recover access without revealing guardian identities" },
+            { label: "Zero-Knowledge Proofs", desc: "Prove wallet ownership without exposing authentication method" }
+          ]
+        },
+        {
+          heading: "Use Cases",
+          items: [
+            { label: "DeFi Applications", desc: "Trade and lend without linking to real-world identity" },
+            { label: "Private Payments", desc: "Send and receive without transaction graph analysis" },
+            { label: "Anonymous Governance", desc: "Vote in DAOs without revealing token holdings" },
+            { label: "Private Social", desc: "Interact on-chain without exposing social connections" }
+          ]
+        }
+      ]
+    }
   },
   {
-    id: "architecture",
-    title: "Architecture",
-    icon: "ph:code",
-    content: `
-## Technical Architecture
+    id: "quickstart",
+    title: "Quick Start",
+    icon: "ph:rocket-launch",
+    content: {
+      title: "Getting Started",
+      description: "Install and configure Veil Protocol in your application",
+      sections: [
+        {
+          heading: "Installation",
+          code: `npm install @veil-protocol/sdk
 
-### System Components
+# or
+yarn add @veil-protocol/sdk`
+        },
+        {
+          heading: "Basic Setup",
+          code: `import { VeilAuth } from '@veil-protocol/sdk';
 
-1. **Frontend (React/TypeScript)**
-   - Client-side ZK proof generation
-   - Local wallet derivation
-   - Session management (never exposes identity)
-   - Solana transaction building
+// Initialize Veil Protocol
+const veil = new VeilAuth({
+  network: 'devnet',
+  rpcUrl: 'https://api.devnet.solana.com'
+});
 
-2. **Wallet Derivation System**
-   - Deterministic address generation: \`derive(H(commitment))\`
-   - Unlinkable across sessions
-   - No key storage required
+// Authenticate user
+const { wallet, commitment } = await veil.authenticate({
+  identifier: 'user@example.com',
+  method: 'email'
+});
 
-3. **Zero-Knowledge Proof Engine**
-   - Protocol: Groth16
-   - Curve: BN128
-   - Proves: "I know secret S such that commitment C = H(identifier, S)"
-   - Result: Only C is public, identifier & S remain private
-
-4. **Solana On-Chain Program**
-   - Stores commitments (32-byte hashes, not identities)
-   - Manages time-locked recovery
-   - Emits privacy-preserving events
-   - Validates proof structures
-
-### Data Flow Diagram
-
-\`\`\`
-┌─────────────┐
-│   User      │ (email/passkey - local only)
-└──────┬──────┘
-       │
-       ▼
-┌─────────────────┐
-│  ZK Proof Gen   │ → commitment C = H(id, secret)
-└──────┬──────────┘
-       │
-       ▼
-┌──────────────────┐
-│ Derive Wallet    │ → address = derive(C)
-└──────┬───────────┘
-       │
-       ▼
-┌──────────────────────┐
-│  Solana Program      │ stores: {C, owner, recovery_data}
-│  (On-chain)          │ NEVER stores: {id, secret, email}
-└──────────────────────┘
-\`\`\`
-
-### Privacy Guarantees by Layer
-
-**Client-Side (Browser)**
-- Identity: Never leaves device
-- Secret: Generated & discarded locally
-- Proof: Computed in-browser
-
-**On-Chain (Solana)**
-- Commitment: Public (reveals nothing about identity)
-- Transactions: Visible but unlinkable to real identity
-- Recovery: Time-locked, guardian-free
-    `,
+console.log('Wallet Address:', wallet.publicKey.toString());
+console.log('Commitment:', commitment); // SHA-256 hash`
+        },
+        {
+          heading: "Configuration Options",
+          items: [
+            { label: "network", desc: "Solana network: 'devnet' | 'mainnet-beta' | 'testnet'" },
+            { label: "rpcUrl", desc: "Custom RPC endpoint URL (optional)" },
+            { label: "commitment", desc: "Transaction commitment level: 'confirmed' | 'finalized'" }
+          ]
+        }
+      ]
+    }
   },
   {
     id: "authentication",
     title: "Authentication",
     icon: "ph:fingerprint",
-    content: `
-## Private Authentication Flow
+    content: {
+      title: "Private Authentication",
+      description: "How zkLogin-style authentication works in Veil Protocol",
+      sections: [
+        {
+          heading: "Authentication Flow",
+          steps: [
+            { step: "1. User Input", desc: "User enters email/passkey (stays in browser, never sent to server)" },
+            { step: "2. Generate Secret", desc: "Cryptographically secure random secret is generated locally" },
+            { step: "3. Create Commitment", desc: "Hash identifier + secret to create commitment: C = SHA256(identifier || secret)" },
+            { step: "4. Derive Wallet", desc: "Deterministically generate wallet address from commitment" },
+            { step: "5. Store Commitment", desc: "Only the commitment hash is stored on-chain (identity remains private)" }
+          ]
+        },
+        {
+          heading: "Code Example",
+          code: `// Authenticate with email
+const result = await veil.authenticate({
+  identifier: 'user@example.com',
+  method: 'email'
+});
 
-### How zkLogin Works (Step-by-Step)
+// result.wallet - Solana Keypair
+// result.commitment - SHA-256 hash (32 bytes)
+// result.proof - ZK proof structure
 
-**Step 1: User Input (Client-Side Only)**
-- User enters email or uses passkey/biometric
-- Input NEVER sent to any server
-- Processed entirely in browser
-
-**Step 2: Zero-Knowledge Proof Generation**
-\`\`\`
-secret = random()
-commitment = H(identifier, secret)
-proof = ZK_prove("I know (identifier, secret) such that C = H(identifier, secret)")
-\`\`\`
-
-**Step 3: Wallet Derivation**
-- Wallet address = derive(commitment)
-- Deterministic: same commitment → same address
-- Unlinkable: different auth sessions → different commitments
-
-**Step 4: On-Chain Commitment**
-- Only commitment is stored on Solana
-- Transaction signed with temporary keypair
-- Original identity remains hidden
-
-### What Makes This Private?
-
-**Traditional Login:**
-- Server stores: email, password hash, user ID
-- Attacker gets: your email, all linked accounts
-- Recovery: requires revealing guardians
-
-**zkLogin (Veil):**
-- Server stores: 32-byte hash (commitment)
-- Attacker gets: meaningless hash
-- Recovery: time-locked, no guardians revealed
-
-### Privacy Properties
-
-✓ **Identity Unlinkable**
-  - Email/passkey never leaves your device
-  - No correlation between logins
-
-✓ **No Password Database**
-  - No passwords to steal
-  - No rainbow table attacks
-
-✓ **Forward Secrecy**
-  - Past commitments don't reveal current identity
-  - Each session is cryptographically isolated
-
-✓ **Observer Resistance**
-  - On-chain observer sees commitment only
-  - Cannot determine: who you are, how you auth, what other wallets you have
-    `,
+// Store commitment on-chain
+await veil.storeCommitment(result.commitment);`
+        },
+        {
+          heading: "Privacy Guarantees",
+          items: [
+            { label: "Identity Never Exposed", desc: "Email/passkey never leaves browser, not stored anywhere" },
+            { label: "Unlinkable Sessions", desc: "Each login creates cryptographically separate session" },
+            { label: "Forward Secrecy", desc: "Past commitments don't reveal current identity" },
+            { label: "Observer Resistance", desc: "On-chain observers only see commitment hash, cannot determine identity" }
+          ]
+        }
+      ]
+    }
   },
   {
     id: "recovery",
     title: "Recovery",
     icon: "ph:key",
-    content: `
-## Private Recovery System
-
-Veil solves a hard problem: **How do you recover a wallet without exposing who your guardians are?**
-
-### Option 1: Time-Locked Recovery
-
-**How It Works:**
-
-1. **Setup (One-time)**
-   - Generate recovery secret locally
-   - Create recovery commitment: \`R = H(recovery_secret)\`
-   - Submit to Solana program with timelock (e.g., 7 days)
-   - Export recovery key as QR code or encrypted file
-
-2. **If You Lose Access**
-   - Enter recovery secret
-   - Submit recovery proof to on-chain program
-   - Wait for timelock period
-   - Execute recovery after timelock expires
-
-3. **Cancellation (Protection)**
-   - If someone steals your recovery key
-   - You (the owner) can cancel before timelock expires
-   - Prevents unauthorized recovery
-
-**Privacy Guarantees:**
-- Recovery key never appears on-chain
-- No one knows recovery is possible until initiated
-- Timelock gives you warning window
-- No guardians = no social graph exposure
-
-**On-Chain State:**
-\`\`\`
-WalletAccount {
-  commitment: [u8; 32],           // original wallet commitment
-  recovery_commitment: [u8; 32],  // recovery commitment (hash)
-  recovery_active: bool,
-  recovery_initiated_at: i64,
-  recovery_unlock_at: i64,
-}
-\`\`\`
-
-### Option 2: Shamir Secret Sharing (Advanced)
-
-**How It Works:**
-
-1. **Setup**
-   - Split recovery key into N shares (e.g., 5 shares)
-   - Set threshold K (e.g., 3 shares required)
-   - Distribute shares to trusted parties
-   - Each guardian gets ONE share (doesn't know others)
-
-2. **Recovery**
-   - Collect K shares from guardians
-   - Reconstruct recovery secret locally
-   - Submit recovery proof
-   - No on-chain record of who contributed
-
-3. **Privacy Features**
-   - Guardian identities NEVER on-chain
-   - Guardians don't know each other
-   - Threshold prevents single point of failure
-   - Social graph remains private
-
-**Privacy Comparison:**
-
-| Aspect | Traditional Recovery | Veil Recovery |
-|--------|---------------------|---------------|
-| Guardian List | Public on-chain | Never revealed |
-| Social Graph | Exposed | Hidden |
-| Recovery Process | Visible immediately | Time-delayed warning |
-| Single Point of Failure | Yes (one guardian) | No (threshold required) |
-
-### Why This Matters
-
-**Scenario: KYC Exposure Attack**
-
-Traditional wallet:
-1. Attacker finds your wallet via KYC leak
-2. Sees your guardian list on-chain
-3. Targets guardians for social engineering
-4. Can map your entire social network
-
-Veil wallet:
-1. Attacker finds commitment on-chain
-2. Sees... a 32-byte hash
-3. Cannot identify guardians
-4. Cannot link to your identity
-5. Social graph remains private
-
-**Recovery is the weakest link in wallet security. Veil makes it the strongest.**
-    `,
-  },
-  {
-    id: "scope",
-    title: "Hackathon Scope",
-    icon: "ph:target",
-    content: `
-## What's Built vs. Mocked
-
-### ✅ Real & Verifiable
-
-**Frontend (Production-Ready)**
-- Complete UI/UX flow (9 screens)
-- Privacy-first messaging and education
-- Zero-knowledge proof visualization
-- Time-lock recovery interface
-- Shamir secret sharing UI
-- Mobile-responsive design
-
-**Solana Program (Deployed to Devnet)**
-- Commitment storage
-- Time-locked recovery mechanism
-- Recovery cancellation
-- Privacy-preserving event emission
-- Program: \`VeiL111111111111111111111111111111111111111\`
-
-**Architecture & Design**
-- Complete system architecture
-- Privacy guarantees documented
-- Threat model analysis
-- Integration-ready structure
-
-### ⚠️ Intentionally Simulated (For Demo)
-
-**ZK Proof Generation**
-- Current: SHA-256 based simulation
-- Production: Would use snarkjs + CIRCOM circuits
-- Structure: Realistic Groth16 proof format
-- Why: Real ZK circuits require weeks of development
-
-**Wallet Derivation**
-- Current: Deterministic address generation
-- Production: Would integrate with Solana's keypair system
-- Privacy: Same guarantees (unlinkable addresses)
-
-**On-Chain Integration**
-- Current: Program deployed but frontend not fully connected
-- Next: Wallet adapter + transaction submission (24 hours)
-
-### ❌ Not Built (Out of Scope)
-
-**Deliberately Excluded:**
-- Full wallet features (send/receive tokens)
-- Token balance display
-- Transaction history
-- NFT support
-- Multi-chain compatibility
-- AI/ML features
-- Private payments (different problem space)
-
-**Why These Are Excluded:**
-Veil is an **infrastructure layer**, not a full wallet. We focus on:
-- Private authentication
-- Privacy-preserving recovery
-- Identity protection
-
-Full wallet features would dilute the core privacy innovation.
-
-### 🎯 Hackathon Engineering Discipline
-
-**What We're Showing:**
-"This is the privacy layer that Solana wallets should integrate."
-
-**What We're NOT Claiming:**
-"This is a production-ready, fully-audited system."
-
-**Honest Disclosure:**
-- ZK proofs are simulated (structure is correct)
-- On-chain integration is partial (program exists, frontend integration in progress)
-- Production would require: security audit, real ZK circuits, extensive testing
-
-**Why This Approach Wins:**
-- Judges appreciate honesty
-- Focus on novel concept (private recovery)
-- Professional execution on what matters
-- Clear roadmap to production
-    `,
-  },
-  {
-    id: "future",
-    title: "Future Vision",
-    icon: "ph:rocket",
-    content: `
-## Future Development Path
-
-### Phase 1: Production Hardening (3-6 months)
-
-**Real ZK Integration**
-- Implement CIRCOM circuits for auth, transactions, recovery
-- Integrate snarkjs for client-side proving
-- Deploy on-chain Groth16 verifier
-- Security audit of circuits
-
-**Full On-Chain Integration**
-- Complete Solana program deployment
-- Wallet adapter integration
-- Transaction submission & confirmation
-- Event monitoring & indexing
-
-**Recovery Key Management**
-- Shamir secret sharing implementation
-- Secure key export (QR codes, encrypted files)
-- Recovery flow testing
-- Time-lock parameter optimization
-
-### Phase 2: Wallet SDK (6-12 months)
-
-**Developer SDK**
-\`\`\`typescript
-import { VeilAuth } from '@veil-protocol/sdk';
-
-const veil = new VeilAuth({
-  network: 'mainnet-beta',
-  commitment: 'confirmed'
+    content: {
+      title: "Private Recovery",
+      description: "Recover wallet access without exposing guardian identities",
+      sections: [
+        {
+          heading: "Recovery Methods",
+          items: [
+            { label: "Time-Locked Recovery", desc: "Single recovery key with time delay (no guardians needed)" },
+            { label: "Shamir Secret Sharing", desc: "Split recovery key into shares, require threshold to recover" }
+          ]
+        },
+        {
+          heading: "Time-Locked Recovery",
+          code: `// Setup time-locked recovery
+const recovery = await veil.setupTimeLockRecovery({
+  timelockDays: 7  // Wait period before recovery executes
 });
 
-// One line to add privacy
-const { wallet, proof } = await veil.authenticate(email);
-\`\`\`
+// Download recovery key (store securely offline)
+downloadRecoveryKey(recovery.key);
 
-**Integration Points:**
-- Phantom Wallet
-- Solflare
-- Backpack
-- Custom wallet implementations
+// Initiate recovery (when needed)
+await veil.initiateRecovery({
+  recoveryKey: recovery.key
+});
 
-**Features:**
-- Drop-in authentication
-- Recovery setup wizards
-- Privacy-preserving session management
-- Event listeners for recovery attempts
+// After timelock expires, execute recovery
+await veil.executeRecovery();`
+        },
+        {
+          heading: "Shamir Secret Sharing",
+          code: `// Setup Shamir recovery (5 shares, need 3 to recover)
+const recovery = await veil.setupShamirRecovery({
+  totalShares: 5,
+  threshold: 3
+});
 
-### Phase 3: Solana Privacy Standard (12-24 months)
+// Distribute shares to guardians
+recovery.shares.forEach((share, index) => {
+  sendToGuardian(guardians[index], share);
+});
 
-**Proposal: SIP-XXXX (Solana Improvement Proposal)**
-
-"Privacy-Preserving Wallet Authentication and Recovery"
-
-**Goals:**
-1. Standardize commitment-based authentication
-2. Define privacy-preserving recovery mechanisms
-3. Create interoperable privacy layer for all wallets
-4. Enable privacy-by-default wallet experiences
-
-**Adoption Path:**
-- Solana Foundation collaboration
-- Wallet provider partnerships
-- Developer education & tooling
-- Grants for privacy-focused projects
-
-### Phase 4: Composable Privacy Primitive (18-36 months)
-
-**Use Cases Built on Veil:**
-
-**Private DAO Voting**
-- Vote without revealing wallet balance
-- Prove membership without identity
-- Anonymous proposal submission
-
-**Private Attestations**
-- KYC without revealing identity
-- Age verification without personal data
-- Credential proofs without credential exposure
-
-**Private Social Graphs**
-- Follow without revealing follower list
-- Message without address linkage
-- Social recovery without exposing friends
-
-**Privacy-Preserving DeFi**
-- Prove solvency without revealing balances
-- Trade without front-running exposure
-- Borrow/lend with identity protection
-
-### What We're Deliberately NOT Building
-
-**Out of Scope Forever:**
-- ❌ Token mixing services (regulatory risk)
-- ❌ Private payments (Zcash, Tornado do this)
-- ❌ AI/ML wallet assistants (feature creep)
-- ❌ Multi-chain support (focus on Solana)
-- ❌ Custodial services (non-custodial only)
-
-**Why This Discipline Matters:**
-Privacy infrastructure is hard enough. Adding adjacent features would compromise our core mission: make wallet identity protection a standard, not a feature.
-
-### Success Metrics (3 Years Out)
-
-**Adoption:**
-- 100k+ wallets using Veil authentication
-- 10+ wallet providers integrated
-- 3+ DApps building on Veil primitives
-
-**Impact:**
-- Zero KYC-to-wallet linkages via Veil
-- Zero guardian exposure incidents
-- 99.9% recovery success rate
-
-**Ecosystem:**
-- Veil becomes default privacy layer
-- "Veil-enabled" becomes a wallet feature
-- Privacy-first becomes the Solana standard
-
-### How You Can Help
-
-**Developers:**
-- Integrate Veil SDK (when released)
-- Build privacy-preserving DApps
-- Contribute to circuits/tooling
-
-**Wallet Providers:**
-- Early access partnership program
-- Privacy feature flagging
-- User education collaboration
-
-**Users:**
-- Demand privacy from your wallet provider
-- Test recovery flows
-- Report privacy concerns
-
-**Investors/Grants:**
-- Support privacy infrastructure
-- Fund security audits
-- Enable open-source development
-
----
-
-**Veil Protocol: Making privacy the default, not the exception.**
-    `,
+// Recover with threshold shares (collect from guardians)
+const shares = [share1, share2, share3];  // Any 3 of 5
+await veil.recoverWithShares(shares);`
+        },
+        {
+          heading: "Privacy Features",
+          items: [
+            { label: "No Guardian Exposure", desc: "Guardian identities never recorded on-chain" },
+            { label: "Hidden Share Distribution", desc: "Share distribution happens off-chain (email, Signal, etc.)" },
+            { label: "Threshold Security", desc: "Need K of N shares, prevents single point of failure" },
+            { label: "Time-Lock Protection", desc: "Delay gives owner time to cancel unauthorized recovery" }
+          ]
+        }
+      ]
+    }
   },
+  {
+    id: "api",
+    title: "API Reference",
+    icon: "ph:code",
+    content: {
+      title: "API Reference",
+      description: "Complete API documentation for Veil Protocol SDK",
+      sections: [
+        {
+          heading: "VeilAuth Class",
+          items: [
+            { label: "authenticate(options)", desc: "Authenticate user and generate wallet" },
+            { label: "storeCommitment(commitment)", desc: "Store commitment hash on-chain" },
+            { label: "verifyProof(proof)", desc: "Verify zero-knowledge proof validity" },
+            { label: "getWallet(commitment)", desc: "Retrieve wallet from commitment" }
+          ]
+        },
+        {
+          heading: "authenticate(options)",
+          code: `interface AuthOptions {
+  identifier: string;        // Email or passkey
+  method: 'email' | 'passkey';
+}
+
+interface AuthResult {
+  wallet: Keypair;           // Solana wallet keypair
+  commitment: string;        // SHA-256 hash (hex)
+  proof: ZKProof;           // Zero-knowledge proof
+}
+
+const result = await veil.authenticate(options);`
+        },
+        {
+          heading: "Recovery Methods",
+          items: [
+            { label: "setupTimeLockRecovery(options)", desc: "Create time-locked recovery" },
+            { label: "setupShamirRecovery(options)", desc: "Create Shamir secret sharing recovery" },
+            { label: "initiateRecovery(key)", desc: "Start recovery process" },
+            { label: "cancelRecovery()", desc: "Cancel ongoing recovery" },
+            { label: "executeRecovery()", desc: "Complete recovery after timelock" }
+          ]
+        },
+        {
+          heading: "Utility Functions",
+          items: [
+            { label: "generateProof(commitment)", desc: "Generate ZK proof for commitment" },
+            { label: "verifyCommitment(commitment, identifier)", desc: "Verify commitment hash" },
+            { label: "exportRecoveryKey()", desc: "Export recovery key as encrypted file" },
+            { label: "importRecoveryKey(file)", desc: "Import recovery key from file" }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    id: "architecture",
+    title: "Architecture",
+    icon: "ph:stack",
+    content: {
+      title: "Technical Architecture",
+      description: "System design and cryptographic primitives",
+      sections: [
+        {
+          heading: "System Components",
+          items: [
+            { label: "Frontend SDK", desc: "React/TypeScript library for client-side proof generation" },
+            { label: "Solana Program", desc: "On-chain program for commitment storage and recovery" },
+            { label: "ZK Proof Engine", desc: "Groth16 proof generation and verification" },
+            { label: "Recovery System", desc: "Time-lock and Shamir secret sharing implementation" }
+          ]
+        },
+        {
+          heading: "Data Flow",
+          code: `User (Email)
+  ↓
+Generate Secret (browser)
+  ↓
+Create Commitment = SHA256(email + secret)
+  ↓
+Derive Wallet = derive(commitment)
+  ↓
+Store Commitment On-Chain
+  ↓
+Identity Remains Private`
+        },
+        {
+          heading: "Cryptographic Primitives",
+          items: [
+            { label: "SHA-256", desc: "Commitment hash generation (one-way function)" },
+            { label: "Groth16", desc: "Zero-knowledge proof protocol (zk-SNARKs)" },
+            { label: "BN128 Curve", desc: "Elliptic curve for pairing-based cryptography" },
+            { label: "Shamir SSS", desc: "Secret sharing over Galois Field GF(256)" }
+          ]
+        },
+        {
+          heading: "On-Chain Storage",
+          code: `pub struct WalletAccount {
+    pub commitment: [u8; 32],           // SHA-256 hash
+    pub recovery_commitment: [u8; 32],  // Recovery hash
+    pub timelock_days: u8,              // Recovery delay
+    pub recovery_active: bool,
+    pub recovery_initiated_at: i64,
+    // NO identity, email, or guardian data stored
+}`
+        }
+      ]
+    }
+  },
+  {
+    id: "security",
+    title: "Security",
+    icon: "ph:shield-check",
+    content: {
+      title: "Security Considerations",
+      description: "Best practices and security guidelines",
+      sections: [
+        {
+          heading: "Critical Security Practices",
+          items: [
+            { label: "Never Log Secrets", desc: "Never log or store user secrets, identifiers, or recovery keys" },
+            { label: "Use HTTPS Only", desc: "Always serve application over HTTPS in production" },
+            { label: "Secure Recovery Storage", desc: "Encrypt recovery keys, store in hardware wallet or offline" },
+            { label: "Validate Inputs", desc: "Sanitize and validate all user inputs before processing" },
+            { label: "Rate Limiting", desc: "Implement rate limiting on authentication endpoints" }
+          ]
+        },
+        {
+          heading: "Threat Model",
+          items: [
+            { label: "On-Chain Observer", desc: "Can see commitment hash, cannot determine identity" },
+            { label: "Compromised Frontend", desc: "Can steal future logins, cannot recover past commitments" },
+            { label: "Stolen Recovery Key", desc: "Time-lock provides window to cancel recovery" },
+            { label: "Social Engineering", desc: "Guardians unknown, cannot be targeted" }
+          ]
+        },
+        {
+          heading: "Recommendations",
+          items: [
+            { label: "Multi-Factor Recovery", desc: "Use both time-lock and Shamir for high-value wallets" },
+            { label: "Regular Testing", desc: "Test recovery flow before needing it in emergency" },
+            { label: "Secure Communication", desc: "Distribute Shamir shares via encrypted channels (Signal, PGP)" },
+            { label: "Audit Smart Contracts", desc: "Conduct security audits before mainnet deployment" }
+          ]
+        }
+      ]
+    }
+  }
 ];
 
 export default function Docs() {
-  const [activeSection, setActiveSection] = useState("overview");
+  const [activeSection, setActiveSection] = useState("introduction");
 
   const currentSection = sections.find((s) => s.id === activeSection);
 
@@ -505,117 +351,133 @@ export default function Docs() {
       <div className="pt-24 pb-16">
         <div className="container mx-auto px-4">
           <div className="flex flex-col lg:flex-row gap-8">
-            {/* Sidebar */}
+            {/* Sidebar Navigation */}
             <motion.aside
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               className="lg:w-64 flex-shrink-0"
             >
               <div className="glass-panel rounded-xl p-4 sticky top-24">
-                <h2 className="font-semibold mb-4 px-3">Documentation</h2>
+                <h2 className="font-semibold mb-4 px-3 text-sm uppercase tracking-wide text-muted-foreground">
+                  Documentation
+                </h2>
                 <nav className="space-y-1">
                   {sections.map((section) => (
                     <button
                       key={section.id}
                       onClick={() => setActiveSection(section.id)}
-                      className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-left ${
+                      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-left ${
                         activeSection === section.id
                           ? "bg-primary/10 text-primary"
-                          : "text-muted-foreground hover:bg-secondary"
+                          : "text-muted-foreground hover:bg-secondary hover:text-foreground"
                       }`}
                     >
-                      <Icon icon={section.icon} className="w-4 h-4" />
-                      {section.title}
+                      <Icon icon={section.icon} className="w-4 h-4 flex-shrink-0" />
+                      <span>{section.title}</span>
                     </button>
                   ))}
                 </nav>
               </div>
             </motion.aside>
 
-            {/* Content */}
+            {/* Main Content */}
             <motion.main
               key={activeSection}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
               className="flex-1 min-w-0"
             >
               <div className="glass-panel rounded-xl p-8">
-                <div className="flex items-center gap-3 mb-8">
-                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                    <Icon icon={currentSection?.icon || "ph:book-open"} className="w-5 h-5 text-primary" />
+                {/* Header */}
+                <div className="mb-8">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                      <Icon
+                        icon={currentSection?.icon || "ph:book-open"}
+                        className="w-5 h-5 text-primary"
+                      />
+                    </div>
+                    <h1 className="text-3xl font-bold">{currentSection?.content.title}</h1>
                   </div>
-                  <h1 className="text-2xl font-bold">{currentSection?.title}</h1>
+                  <p className="text-muted-foreground">
+                    {currentSection?.content.description}
+                  </p>
                 </div>
 
-                <div className="prose prose-invert max-w-none">
-                  {currentSection?.content.split("\n").map((line, i) => {
-                    if (line.startsWith("## ")) {
-                      return (
-                        <h2 key={i} className="text-xl font-bold mt-8 mb-4 first:mt-0">
-                          {line.replace("## ", "")}
-                        </h2>
-                      );
-                    }
-                    if (line.startsWith("### ")) {
-                      return (
-                        <h3 key={i} className="text-lg font-semibold mt-6 mb-3">
-                          {line.replace("### ", "")}
-                        </h3>
-                      );
-                    }
-                    if (line.startsWith("1. ") || line.startsWith("2. ") || line.startsWith("3. ") || line.startsWith("4. ")) {
-                      return (
-                        <p key={i} className="text-muted-foreground my-1 pl-4">
-                          {line}
-                        </p>
-                      );
-                    }
-                    if (line.startsWith("- **")) {
-                      const match = line.match(/- \*\*(.+)\*\* (.+)/);
-                      if (match) {
-                        return (
-                          <p key={i} className="text-muted-foreground my-2">
-                            <strong className="text-foreground">{match[1]}</strong> {match[2]}
-                          </p>
-                        );
-                      }
-                    }
-                    if (line.startsWith("- ")) {
-                      return (
-                        <p key={i} className="text-muted-foreground my-1 pl-4">
-                          • {line.replace("- ", "")}
-                        </p>
-                      );
-                    }
-                    if (line.startsWith("**Privacy:**")) {
-                      return (
-                        <div key={i} className="my-4 p-3 rounded-lg bg-primary/5 border border-primary/10">
-                          <p className="text-sm">
-                            <span className="text-primary font-medium">Privacy: </span>
-                            <span className="text-muted-foreground">{line.replace("**Privacy:** ", "")}</span>
-                          </p>
+                {/* Content Sections */}
+                <div className="space-y-8">
+                  {currentSection?.content.sections.map((section, idx) => (
+                    <div key={idx}>
+                      <h2 className="text-xl font-semibold mb-4">{section.heading}</h2>
+
+                      {/* Text content */}
+                      {section.content && (
+                        <div className="space-y-3">
+                          {section.content.map((text, i) => (
+                            <p key={i} className="text-muted-foreground leading-relaxed">
+                              {text}
+                            </p>
+                          ))}
                         </div>
-                      );
-                    }
-                    if (line.startsWith("```")) {
-                      return null; // Skip code block markers
-                    }
-                    if (line.includes("→")) {
-                      return (
-                        <pre key={i} className="my-4 p-4 rounded-lg bg-secondary font-mono text-sm overflow-x-auto">
-                          {line}
+                      )}
+
+                      {/* Code blocks */}
+                      {section.code && (
+                        <pre className="bg-secondary/50 rounded-lg p-4 overflow-x-auto border border-border">
+                          <code className="text-sm font-mono text-foreground">
+                            {section.code}
+                          </code>
                         </pre>
-                      );
-                    }
-                    if (line.trim() === "") {
-                      return <div key={i} className="h-2" />;
-                    }
-                    return (
-                      <p key={i} className="text-muted-foreground my-2">
-                        {line}
-                      </p>
-                    );
-                  })}
+                      )}
+
+                      {/* Item lists */}
+                      {section.items && (
+                        <div className="space-y-3">
+                          {section.items.map((item, i) => (
+                            <div
+                              key={i}
+                              className="flex gap-3 p-3 rounded-lg bg-secondary/30 border border-border/50"
+                            >
+                              <Icon
+                                icon="ph:arrow-right"
+                                className="w-5 h-5 text-primary flex-shrink-0 mt-0.5"
+                              />
+                              <div>
+                                <div className="font-mono text-sm font-medium text-foreground">
+                                  {item.label}
+                                </div>
+                                <div className="text-sm text-muted-foreground mt-1">
+                                  {item.desc}
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Steps */}
+                      {section.steps && (
+                        <div className="space-y-3">
+                          {section.steps.map((step, i) => (
+                            <div key={i} className="flex gap-3">
+                              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                                <span className="text-sm font-bold text-primary">
+                                  {i + 1}
+                                </span>
+                              </div>
+                              <div className="flex-1 pt-1">
+                                <div className="font-medium text-foreground">{step.step}</div>
+                                <div className="text-sm text-muted-foreground mt-1">
+                                  {step.desc}
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
                 </div>
               </div>
             </motion.main>
