@@ -9,7 +9,8 @@
       "Bash(cargo build-sbf:*)",
       "Bash(ls:*)",
       "Bash(npm install:*)",
-      "Bash(npm run build:*)"
+      "Bash(npm run build:*)",
+      "Bash(test:*)"
     ]
   }
 }

@@ -52,7 +52,8 @@ export function PrivatePaymentDialog({ isOpen, onClose }: PrivatePaymentDialogPr
       return;
     }
 
-    if (!publicKey || !signMessage) {
+    // Only check wallet connection if NOT in demo mode
+    if (!demoMode && (!publicKey || !signMessage)) {
       setError('Wallet not connected');
       return;
     }
@@ -67,7 +68,8 @@ export function PrivatePaymentDialog({ isOpen, onClose }: PrivatePaymentDialogPr
 
     try {
       // Demo mode simulation (for judges/testing without wallet)
-      if (demoMode || !publicKey || !signMessage) {
+      // Check demo mode FIRST before any SDK calls
+      if (demoMode) {
         // Simulate processing delay
         await new Promise((resolve) => setTimeout(resolve, 2000));
 
@@ -83,7 +85,13 @@ export function PrivatePaymentDialog({ isOpen, onClose }: PrivatePaymentDialogPr
         return;
       }
 
-      // Real wallet payment
+      // Real wallet payment (only if wallet is connected)
+      if (!publicKey || !signMessage) {
+        setError('Wallet not connected');
+        setStage('failed');
+        return;
+      }
+
       const paymentResult = await sendPrivatePayment(
         {
           recipient,
@@ -169,6 +177,26 @@ export function PrivatePaymentDialog({ isOpen, onClose }: PrivatePaymentDialogPr
                 </div>
               </div>
             </div>
+
+            {connected && !demoMode && (
+              <div className="p-3 rounded-lg bg-warning/5 border border-warning/10">
+                <div className="flex items-start gap-2">
+                  <Icon icon="ph:coins" className="w-4 h-4 text-warning mt-0.5 flex-shrink-0" />
+                  <div className="text-xs text-muted-foreground">
+                    <strong className="text-warning">Devnet Mode:</strong> This uses Solana devnet.
+                    Get free devnet SOL from{' '}
+                    <a
+                      href="https://faucet.solana.com"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-warning underline"
+                    >
+                      faucet.solana.com
+                    </a>
+                  </div>
+                </div>
+              </div>
+            )}
 
             <details className="group">
               <summary className="cursor-pointer p-3 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors">
@@ -269,10 +297,15 @@ export function PrivatePaymentDialog({ isOpen, onClose }: PrivatePaymentDialogPr
                   type="text"
                   value={recipient}
                   onChange={(e) => setRecipient(e.target.value)}
-                  placeholder="Enter Solana address"
+                  placeholder={demoMode ? "Any valid Solana address (demo)" : "Enter Solana address"}
                   className="w-full px-4 py-3 rounded-lg border border-border bg-background focus:outline-none focus:border-primary transition-colors font-mono text-sm"
                   required
                 />
+                {demoMode && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Demo mode: Try <code className="text-xs bg-secondary px-1 rounded">11111111111111111111111111111111</code> or any valid address
+                  </p>
+                )}
               </div>
 
               <div>

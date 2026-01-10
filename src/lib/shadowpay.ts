@@ -33,6 +33,7 @@ let shadowWireClient: ShadowWireClient | null = null;
 function getShadowWireClient(): ShadowWireClient {
   if (!shadowWireClient) {
     shadowWireClient = new ShadowWireClient({
+      network: 'devnet', // Use devnet for testing
       debug: import.meta.env.DEV, // Only in development
     });
   }
