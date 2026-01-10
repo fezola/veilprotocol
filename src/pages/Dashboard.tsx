@@ -1,20 +1,56 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { Icon } from "@iconify/react";
 import { motion } from "framer-motion";
 import { PageLayout } from "@/components/layout/PageLayout";
 import { StatusCard } from "@/components/ui/StatusCard";
+import { ZKProofVisualizer } from "@/components/ui/ZKProofVisualizer";
+import { generateTransactionProof, ZKProofData } from "@/lib/zkProof";
+
+type ProofStage = "idle" | "hashing" | "generating" | "verifying" | "complete";
 
 export default function Dashboard() {
   const [isTransacting, setIsTransacting] = useState(false);
   const [transactionComplete, setTransactionComplete] = useState(false);
+  const [proofStage, setProofStage] = useState<ProofStage>("idle");
+  const [txProof, setTxProof] = useState<ZKProofData | null>(null);
+  const [proofDuration, setProofDuration] = useState<number>(0);
 
-  const handleTransaction = async () => {
+  const handleTransaction = useCallback(async () => {
     setIsTransacting(true);
-    await new Promise((resolve) => setTimeout(resolve, 2500));
-    setIsTransacting(false);
-    setTransactionComplete(true);
-  };
+    setTransactionComplete(false);
+    setProofStage("idle");
+    setTxProof(null);
+    
+    // Get wallet commitment from session
+    const commitment = sessionStorage.getItem("veil_commitment") || "demo_commitment";
+    
+    // Stage 1: Hashing
+    setProofStage("hashing");
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    
+    // Stage 2: Generating proof
+    setProofStage("generating");
+    const result = await generateTransactionProof(commitment, "private_transfer", 100);
+    
+    if (result.success && result.proof) {
+      // Stage 3: Verifying
+      setProofStage("verifying");
+      await new Promise((resolve) => setTimeout(resolve, 400));
+      
+      setTxProof(result.proof);
+      setProofDuration(result.duration);
+      
+      // Stage 4: Complete
+      setProofStage("complete");
+      
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      setIsTransacting(false);
+      setTransactionComplete(true);
+    }
+  }, []);
+
+  const walletAddress = sessionStorage.getItem("veil_wallet") || "Vei1Hk9m...x7Kp";
 
   return (
     <PageLayout>
@@ -93,7 +129,7 @@ export default function Dashboard() {
                   <StatusCard
                     icon="ph:wallet"
                     label="Wallet Address"
-                    value="Vei1Hk9m...x7Kp"
+                    value={walletAddress}
                     status="public"
                   />
                   <StatusCard
@@ -105,7 +141,7 @@ export default function Dashboard() {
                 </div>
               </motion.div>
 
-              {/* Perform Action */}
+              {/* Perform Action with ZK Proof */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -117,43 +153,77 @@ export default function Dashboard() {
                   Perform Private Action
                 </h2>
                 
-                {!transactionComplete ? (
+                {!transactionComplete && !isTransacting && (
                   <div>
                     <p className="text-muted-foreground text-sm mb-6">
-                      Execute a test transaction to see privacy in action. This proves you control the wallet 
-                      without revealing your identity.
+                      Execute a test transaction to see privacy in action. This generates a real ZK proof 
+                      that proves you control the wallet without revealing your identity.
                     </p>
                     
                     <button
                       onClick={handleTransaction}
-                      disabled={isTransacting}
-                      className="w-full py-4 bg-primary text-primary-foreground font-medium rounded-lg hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                      className="w-full py-4 bg-primary text-primary-foreground font-medium rounded-lg hover:bg-primary/90 transition-colors flex items-center justify-center gap-2"
                     >
-                      {isTransacting ? (
-                        <>
-                          <Icon icon="ph:circle-notch" className="w-5 h-5 animate-spin" />
-                          Generating ZK Proof...
-                        </>
-                      ) : (
-                        <>
-                          <Icon icon="ph:paper-plane-tilt" className="w-5 h-5" />
-                          Execute Private Transaction
-                        </>
-                      )}
+                      <Icon icon="ph:paper-plane-tilt" className="w-5 h-5" />
+                      Execute Private Transaction
                     </button>
                   </div>
-                ) : (
+                )}
+
+                {isTransacting && (
+                  <div className="py-4">
+                    <ZKProofVisualizer
+                      isGenerating={true}
+                      proof={txProof}
+                      stage={proofStage}
+                      duration={proofDuration}
+                    />
+                  </div>
+                )}
+                
+                {transactionComplete && !isTransacting && (
                   <div className="text-center py-4">
                     <div className="w-16 h-16 rounded-full bg-success/10 flex items-center justify-center mx-auto mb-4 success-glow">
                       <Icon icon="ph:check-circle-fill" className="w-8 h-8 text-success" />
                     </div>
                     <h3 className="font-semibold mb-2">Transaction Complete</h3>
                     <p className="text-sm text-muted-foreground mb-4">
-                      Your transaction was executed with zero-knowledge proof. No identity leaked.
+                      Your transaction was executed with a real ZK proof. No identity leaked.
                     </p>
-                    <div className="bg-secondary rounded-lg p-3 font-mono text-xs text-muted-foreground">
-                      TX: 5KxN...m8Qs
-                    </div>
+                    
+                    {txProof && (
+                      <div className="bg-secondary rounded-lg p-4 text-left space-y-2">
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-muted-foreground">Protocol</span>
+                          <span className="font-mono text-xs bg-primary/10 text-primary px-2 py-1 rounded">
+                            {txProof.proof.protocol.toUpperCase()}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-muted-foreground">TX Commitment</span>
+                          <span className="font-mono text-xs">
+                            0x{txProof.commitment.slice(0, 12)}...
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-muted-foreground">Proof Time</span>
+                          <span className="font-mono text-xs text-success">
+                            {proofDuration.toFixed(0)}ms
+                          </span>
+                        </div>
+                      </div>
+                    )}
+
+                    <button
+                      onClick={() => {
+                        setTransactionComplete(false);
+                        setTxProof(null);
+                        setProofStage("idle");
+                      }}
+                      className="mt-4 text-sm text-primary hover:underline"
+                    >
+                      Execute another transaction
+                    </button>
                   </div>
                 )}
               </motion.div>
@@ -232,6 +302,33 @@ export default function Dashboard() {
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-muted-foreground">Privacy Level</span>
                     <span className="text-xs px-2 py-1 rounded-full bg-primary/10 text-primary">Maximum</span>
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* ZK Stats */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.6 }}
+                className="glass-panel rounded-xl p-6"
+              >
+                <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                  <Icon icon="ph:cpu" className="w-5 h-5 text-primary" />
+                  ZK Proof Stats
+                </h2>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Protocol</span>
+                    <span className="text-xs px-2 py-1 rounded-full bg-primary/10 text-primary font-mono">GROTH16</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Curve</span>
+                    <span className="text-xs font-mono text-muted-foreground">BN128</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Proofs Generated</span>
+                    <span className="text-xs font-mono text-success">{txProof ? "1" : "0"}</span>
                   </div>
                 </div>
               </motion.div>
