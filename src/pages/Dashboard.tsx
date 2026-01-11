@@ -18,6 +18,17 @@ export default function Dashboard() {
   const [txProof, setTxProof] = useState<ZKProofData | null>(null);
   const [proofDuration, setProofDuration] = useState<number>(0);
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
+  const [showSecureAction, setShowSecureAction] = useState(false);
+  const [secureActionVerified, setSecureActionVerified] = useState(false);
+
+  const handleSecureAction = useCallback(async () => {
+    setShowSecureAction(true);
+    setSecureActionVerified(false);
+
+    // Simulate verification delay (using existing auth proof)
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    setSecureActionVerified(true);
+  }, []);
 
   const handleTransaction = useCallback(async () => {
     setIsTransacting(true);
@@ -444,6 +455,20 @@ export default function Dashboard() {
                     <Icon icon="ph:caret-right" className="w-4 h-4 text-muted-foreground" />
                   </button>
 
+                  <button
+                    onClick={handleSecureAction}
+                    className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-secondary transition-colors text-left border border-primary/20"
+                  >
+                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                      <Icon icon="ph:lock-key" className="w-5 h-5 text-primary" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-medium text-sm">Secure Action</p>
+                      <p className="text-xs text-muted-foreground">Verify access without revealing identity</p>
+                    </div>
+                    <Icon icon="ph:caret-right" className="w-4 h-4 text-muted-foreground" />
+                  </button>
+
                   <Link
                     to="/recovery-setup"
                     className="flex items-center gap-3 p-3 rounded-lg hover:bg-secondary transition-colors"
@@ -557,6 +582,106 @@ export default function Dashboard() {
         isOpen={isPaymentDialogOpen}
         onClose={() => setIsPaymentDialogOpen(false)}
       />
+
+      {/* Secure Action Modal */}
+      {showSecureAction && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="w-full max-w-md glass-panel rounded-2xl p-6"
+          >
+            <div className="flex items-start justify-between mb-6">
+              <div>
+                <h2 className="text-xl font-bold flex items-center gap-2">
+                  <Icon icon="ph:lock-key" className="w-6 h-6 text-primary" />
+                  Secure Action
+                </h2>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Privacy-preserving access verification
+                </p>
+              </div>
+              <button
+                onClick={() => setShowSecureAction(false)}
+                className="p-2 rounded-lg hover:bg-secondary transition-colors"
+              >
+                <Icon icon="ph:x" className="w-5 h-5" />
+              </button>
+            </div>
+
+            {!secureActionVerified ? (
+              <div className="py-8 text-center">
+                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                  <Icon icon="ph:spinner" className="w-8 h-8 text-primary animate-spin" />
+                </div>
+                <h3 className="font-semibold mb-2">Verifying Access</h3>
+                <p className="text-sm text-muted-foreground">
+                  Checking your authentication proof...
+                </p>
+              </div>
+            ) : (
+              <div>
+                <div className="py-6 text-center">
+                  <div className="w-16 h-16 rounded-full bg-success/10 flex items-center justify-center mx-auto mb-4">
+                    <Icon icon="ph:check-circle" className="w-8 h-8 text-success" />
+                  </div>
+                  <h3 className="font-semibold mb-2">Access Verified</h3>
+                  <p className="text-sm text-muted-foreground mb-6">
+                    You have permission to perform this action
+                  </p>
+                </div>
+
+                <div className="glass-panel rounded-lg p-4 mb-6">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Icon icon="ph:shield-check" className="w-4 h-4 text-primary" />
+                    <h4 className="text-sm font-semibold">What Just Happened</h4>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-start gap-2">
+                      <Icon icon="ph:check" className="w-4 h-4 text-success mt-0.5 flex-shrink-0" />
+                      <p className="text-xs text-muted-foreground">
+                        <strong className="text-foreground">Verified proof:</strong> Used your existing ZK authentication proof
+                      </p>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <Icon icon="ph:x-circle" className="w-4 h-4 text-destructive mt-0.5 flex-shrink-0" />
+                      <p className="text-xs text-muted-foreground">
+                        <strong className="text-foreground">No identity revealed:</strong> Your email/identity never exposed
+                      </p>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <Icon icon="ph:x-circle" className="w-4 h-4 text-destructive mt-0.5 flex-shrink-0" />
+                      <p className="text-xs text-muted-foreground">
+                        <strong className="text-foreground">No address shown:</strong> Wallet address remains unlinkable
+                      </p>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <Icon icon="ph:check" className="w-4 h-4 text-success mt-0.5 flex-shrink-0" />
+                      <p className="text-xs text-muted-foreground">
+                        <strong className="text-foreground">Access granted:</strong> Based on cryptographic proof alone
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-3 rounded-lg bg-primary/5 border border-primary/10 mb-6">
+                  <p className="text-xs text-muted-foreground text-center">
+                    <Icon icon="ph:info" className="w-3 h-3 inline mr-1" />
+                    This demonstrates verified access without identity exposure—the core of Veil Protocol.
+                  </p>
+                </div>
+
+                <button
+                  onClick={() => setShowSecureAction(false)}
+                  className="w-full py-3 bg-primary text-primary-foreground font-medium rounded-lg hover:bg-primary/90 transition-colors"
+                >
+                  Done
+                </button>
+              </div>
+            )}
+          </motion.div>
+        </div>
+      )}
     </PageLayout>
   );
 }

@@ -111,6 +111,99 @@ export default function Guarantees() {
             ))}
           </div>
 
+          {/* Privacy Boundary Visualization */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="max-w-4xl mx-auto mb-16"
+          >
+            <div className="glass-panel rounded-xl p-8">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <Icon icon="ph:flow-arrow" className="w-5 h-5 text-primary" />
+                </div>
+                <h2 className="font-semibold text-xl">Privacy Boundary</h2>
+              </div>
+
+              <p className="text-muted-foreground mb-8">
+                Understanding what crosses the boundary and what stays private:
+              </p>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="space-y-4">
+                  <div className="text-center">
+                    <div className="inline-block px-4 py-2 rounded-lg bg-destructive/10 border border-destructive/20 mb-3">
+                      <span className="text-sm font-medium text-destructive">Your Secret</span>
+                    </div>
+                  </div>
+                  <div className="p-4 rounded-lg bg-secondary/50 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Icon icon="ph:x" className="w-4 h-4 text-destructive" />
+                      <span className="text-sm">Email/Identity</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Icon icon="ph:x" className="w-4 h-4 text-destructive" />
+                      <span className="text-sm">Recovery guardians</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Icon icon="ph:x" className="w-4 h-4 text-destructive" />
+                      <span className="text-sm">Other wallets</span>
+                    </div>
+                  </div>
+                  <div className="text-center text-xs text-muted-foreground">
+                    Never leaves your device
+                  </div>
+                </div>
+
+                <div className="flex flex-col items-center justify-center">
+                  <div className="text-center mb-4">
+                    <div className="inline-block px-4 py-2 rounded-lg bg-success/10 border border-success/20">
+                      <span className="text-sm font-medium text-success">ZK Proof</span>
+                    </div>
+                  </div>
+                  <Icon icon="ph:arrow-right" className="w-8 h-8 text-primary mb-4" />
+                  <div className="p-4 rounded-lg bg-success/5 border border-success/20 text-center">
+                    <p className="text-sm font-medium mb-2">Proves validity</p>
+                    <p className="text-xs text-muted-foreground">without revealing data</p>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="text-center">
+                    <div className="inline-block px-4 py-2 rounded-lg bg-warning/10 border border-warning/20 mb-3">
+                      <span className="text-sm font-medium text-warning">Solana Sees</span>
+                    </div>
+                  </div>
+                  <div className="p-4 rounded-lg bg-secondary/50 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Icon icon="ph:check" className="w-4 h-4 text-success" />
+                      <span className="text-sm">Proof is valid</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Icon icon="ph:check" className="w-4 h-4 text-success" />
+                      <span className="text-sm">Wallet address</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Icon icon="ph:check" className="w-4 h-4 text-success" />
+                      <span className="text-sm">Transaction data</span>
+                    </div>
+                  </div>
+                  <div className="text-center text-xs text-muted-foreground">
+                    Public, but unlinkable
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-8 p-4 rounded-lg bg-primary/5 border border-primary/10">
+                <p className="text-sm text-muted-foreground text-center">
+                  <strong className="text-foreground">Key Insight:</strong> Solana verifies your rights without learning your identity.
+                  The blockchain never sees your secret—only proof that you have one.
+                </p>
+              </div>
+            </div>
+          </motion.div>
+
           {/* What Attackers Cannot Learn */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -127,7 +220,7 @@ export default function Guarantees() {
               </div>
 
               <p className="text-muted-foreground mb-6">
-                Even with full access to the Solana blockchain and Veil's public infrastructure, 
+                Even with full access to the Solana blockchain and Veil's public infrastructure,
                 an adversary cannot determine:
               </p>
 
@@ -141,6 +234,80 @@ export default function Guarantees() {
                     <span className="text-sm">{item}</span>
                   </div>
                 ))}
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Composability Signal */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="max-w-4xl mx-auto mb-16"
+          >
+            <div className="glass-panel rounded-xl p-8">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 rounded-lg bg-secondary flex items-center justify-center">
+                  <Icon icon="ph:plug" className="w-5 h-5" />
+                </div>
+                <h2 className="font-semibold text-xl">Infrastructure, Not Just an App</h2>
+              </div>
+
+              <p className="text-muted-foreground mb-6">
+                Veil Protocol's privacy guarantees can be composed into any application requiring verified access without identity exposure:
+              </p>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="p-4 rounded-lg bg-secondary/30 border border-border opacity-60 cursor-not-allowed">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Icon icon="ph:users-three" className="w-5 h-5 text-muted-foreground" />
+                    <span className="text-xs font-medium text-muted-foreground">Future</span>
+                  </div>
+                  <h3 className="font-semibold text-sm mb-2">Private DAO Access</h3>
+                  <p className="text-xs text-muted-foreground">
+                    Verify membership without revealing voter identity
+                  </p>
+                </div>
+
+                <div className="p-4 rounded-lg bg-secondary/30 border border-border opacity-60 cursor-not-allowed">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Icon icon="ph:rocket-launch" className="w-5 h-5 text-muted-foreground" />
+                    <span className="text-xs font-medium text-muted-foreground">Future</span>
+                  </div>
+                  <h3 className="font-semibold text-sm mb-2">Launchpad Eligibility</h3>
+                  <p className="text-xs text-muted-foreground">
+                    Prove qualification without exposing holdings
+                  </p>
+                </div>
+
+                <div className="p-4 rounded-lg bg-secondary/30 border border-border opacity-60 cursor-not-allowed">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Icon icon="ph:game-controller" className="w-5 h-5 text-muted-foreground" />
+                    <span className="text-xs font-medium text-muted-foreground">Future</span>
+                  </div>
+                  <h3 className="font-semibold text-sm mb-2">Game Account Protection</h3>
+                  <p className="text-xs text-muted-foreground">
+                    Secure accounts with recoverable private access
+                  </p>
+                </div>
+
+                <div className="p-4 rounded-lg bg-secondary/30 border border-border opacity-60 cursor-not-allowed">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Icon icon="ph:building-office" className="w-5 h-5 text-muted-foreground" />
+                    <span className="text-xs font-medium text-muted-foreground">Future</span>
+                  </div>
+                  <h3 className="font-semibold text-sm mb-2">Institutional Wallets</h3>
+                  <p className="text-xs text-muted-foreground">
+                    Multi-party control without exposing signers
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-6 p-4 rounded-lg bg-secondary/20 border border-border/50">
+                <p className="text-xs text-muted-foreground text-center">
+                  <Icon icon="ph:info" className="w-4 h-4 inline mr-1" />
+                  These are potential use cases demonstrating Veil's reusability as privacy infrastructure, not a feature roadmap.
+                </p>
               </div>
             </div>
           </motion.div>

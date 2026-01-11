@@ -479,6 +479,46 @@ export default function RecoveryExecute() {
                   </div>
                 )}
 
+                {/* Recovery Threat Model */}
+                <div className="glass-panel rounded-lg p-6 mb-6 text-left border-primary/20">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Icon icon="ph:shield-check" className="w-5 h-5 text-primary" />
+                    <h3 className="font-semibold text-sm">What Attackers Cannot See</h3>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-start gap-2">
+                      <Icon icon="ph:x-circle" className="w-4 h-4 text-destructive mt-0.5 flex-shrink-0" />
+                      <p className="text-xs text-muted-foreground">
+                        <strong className="text-foreground">Who helped recover:</strong> Guardian identities never appear on-chain
+                      </p>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <Icon icon="ph:x-circle" className="w-4 h-4 text-destructive mt-0.5 flex-shrink-0" />
+                      <p className="text-xs text-muted-foreground">
+                        <strong className="text-foreground">When recovery started:</strong> No timestamps linking you to recovery attempts
+                      </p>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <Icon icon="ph:x-circle" className="w-4 h-4 text-destructive mt-0.5 flex-shrink-0" />
+                      <p className="text-xs text-muted-foreground">
+                        <strong className="text-foreground">How many shares used:</strong> Threshold remains private
+                      </p>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <Icon icon="ph:x-circle" className="w-4 h-4 text-destructive mt-0.5 flex-shrink-0" />
+                      <p className="text-xs text-muted-foreground">
+                        <strong className="text-foreground">Link to identity:</strong> No connection between recovery and real-world you
+                      </p>
+                    </div>
+                  </div>
+                  <div className="mt-4 pt-4 border-t border-border">
+                    <p className="text-xs text-muted-foreground">
+                      <Icon icon="ph:info" className="w-3 h-3 inline mr-1" />
+                      Even with full blockchain access, adversaries learn nothing about your recovery process.
+                    </p>
+                  </div>
+                </div>
+
                 <div className="flex flex-col sm:flex-row gap-4">
                   <Link
                     to="/dashboard"
