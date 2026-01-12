@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 
-declare_id!("5C1VaebPdHZYETnTL18cLJK2RexXmVVhkkYpnYHD5P4h");
+declare_id!("FaSJXt21yZ2WZKLoQYAV9nkTHqYNduDh95nU1uYGZP87");
 
 #[program]
 pub mod veil_protocol {

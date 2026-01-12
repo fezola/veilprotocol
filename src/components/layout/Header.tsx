@@ -7,10 +7,11 @@ import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { useAuth } from "@/contexts/AuthContext";
 
 const navItems = [
-  { label: "About", href: "/about" },
-  { label: "Why Privacy", href: "/why-privacy" },
   { label: "Dashboard", href: "/dashboard" },
+  { label: "Demo", href: "/demo" },
+  { label: "Why Privacy", href: "/why-privacy" },
   { label: "Recovery", href: "/recovery-setup" },
+  { label: "About", href: "/about" },
   { label: "Docs", href: "/docs" },
 ];
 

@@ -75,6 +75,10 @@ export default function RecoverySetup() {
         });
       }
 
+      // Mark recovery as setup in sessionStorage for dashboard
+      sessionStorage.setItem("veil_recovery_setup", "true");
+      sessionStorage.setItem("veil_recovery_method", method);
+
       setStep("complete");
     } catch (error) {
       console.error("Recovery setup error:", error);

@@ -9,6 +9,7 @@ import { ProtectedRoute } from "./components/ProtectedRoute";
 import Landing from "./pages/Landing";
 import About from "./pages/About";
 import WhyPrivacy from "./pages/WhyPrivacy";
+import Demo from "./pages/Demo";
 import Login from "./pages/Login";
 import WalletCreated from "./pages/WalletCreated";
 import Dashboard from "./pages/Dashboard";
@@ -33,6 +34,7 @@ const App = () => (
               <Route path="/" element={<Landing />} />
               <Route path="/about" element={<About />} />
               <Route path="/why-privacy" element={<WhyPrivacy />} />
+              <Route path="/demo" element={<Demo />} />
               <Route
                 path="/login"
                 element={

@@ -5,7 +5,7 @@
  * IDL can be found at `target/idl/veil_protocol.json`.
  */
 export type VeilProtocol = {
-  "address": "5C1VaebPdHZYETnTL18cLJK2RexXmVVhkkYpnYHD5P4h",
+  "address": "FaSJXt21yZ2WZKLoQYAV9nkTHqYNduDh95nU1uYGZP87",
   "metadata": {
     "name": "veilProtocol",
     "version": "0.1.0",
