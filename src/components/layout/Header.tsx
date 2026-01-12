@@ -11,6 +11,7 @@ const navItems = [
   { label: "Demo", href: "/demo" },
   { label: "Why Privacy", href: "/why-privacy" },
   { label: "Recovery", href: "/recovery-setup" },
+  { label: "CLI", href: "/cli" },
   { label: "About", href: "/about" },
   { label: "Docs", href: "/docs" },
 ];

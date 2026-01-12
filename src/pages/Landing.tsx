@@ -419,8 +419,119 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Problem vs Solution Section */}
+      {/* Developer CLI Section */}
       <section className="py-24 bg-card/30">
+        <div className="container mx-auto px-4">
+          <div className="max-w-6xl mx-auto">
+            <div className="grid lg:grid-cols-2 gap-12 items-center">
+              {/* Left: Content */}
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+              >
+                <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
+                  <Icon icon="ph:terminal" className="w-4 h-4" />
+                  Developer Tools
+                </span>
+                <h2 className="text-4xl md:text-5xl font-bold mb-6">
+                  Build Privacy Apps<br />
+                  <span className="text-primary">In Minutes</span>
+                </h2>
+                <p className="text-lg text-muted-foreground mb-8">
+                  The Veil CLI scaffolds production-ready Solana applications with privacy
+                  built into every layer — identity, access, and recovery.
+                </p>
+
+                <div className="space-y-4 mb-8">
+                  {[
+                    { icon: "ph:rocket-launch", text: "Scaffold in under 60 seconds" },
+                    { icon: "ph:shield-check", text: "Privacy modules pre-configured" },
+                    { icon: "ph:plug", text: "ShadowPay integration ready" },
+                  ].map((item, idx) => (
+                    <motion.div
+                      key={item.text}
+                      initial={{ opacity: 0, x: -10 }}
+                      whileInView={{ opacity: 1, x: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: idx * 0.1 }}
+                      className="flex items-center gap-3"
+                    >
+                      <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                        <Icon icon={item.icon} className="w-4 h-4 text-primary" />
+                      </div>
+                      <span className="text-sm font-medium">{item.text}</span>
+                    </motion.div>
+                  ))}
+                </div>
+
+                <Link
+                  to="/cli"
+                  className="group inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground font-medium rounded-lg hover:bg-primary/90 transition-all"
+                >
+                  <Icon icon="ph:terminal" className="w-5 h-5" />
+                  Explore CLI
+                  <Icon icon="ph:arrow-right" className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </Link>
+              </motion.div>
+
+              {/* Right: Terminal Preview */}
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                className="relative"
+              >
+                <div className="glass-panel rounded-xl overflow-hidden border border-primary/20">
+                  {/* Terminal Header */}
+                  <div className="bg-gradient-to-r from-primary/20 to-purple-500/20 px-4 py-3 border-b flex items-center gap-2">
+                    <div className="flex gap-1.5">
+                      <div className="w-3 h-3 rounded-full bg-red-500/80" />
+                      <div className="w-3 h-3 rounded-full bg-yellow-500/80" />
+                      <div className="w-3 h-3 rounded-full bg-green-500/80" />
+                    </div>
+                    <span className="text-xs text-muted-foreground ml-2 font-mono">veil init my-app</span>
+                  </div>
+                  {/* Terminal Content */}
+                  <div className="p-4 bg-[#1a1a2e] font-mono text-xs leading-relaxed">
+                    <pre className="text-cyan-400">{`
+██╗   ██╗███████╗██╗██╗
+██║   ██║██╔════╝██║██║
+██║   ██║█████╗  ██║██║
+╚██╗ ██╔╝██╔══╝  ██║██║
+ ╚████╔╝ ███████╗██║███████╗
+  ╚═══╝  ╚══════╝╚═╝╚══════╝`}</pre>
+                    <p className="text-purple-400 mt-2">Veil — Privacy-first access & recovery for Solana</p>
+                    <div className="mt-4 space-y-1">
+                      <p><span className="text-yellow-400">?</span> <span className="text-white">Project name:</span> <span className="text-green-400">my-dex</span></p>
+                      <p><span className="text-yellow-400">?</span> <span className="text-white">Frontend:</span> <span className="text-cyan-400">Next.js</span></p>
+                      <p><span className="text-yellow-400">?</span> <span className="text-white">ShadowPay:</span> <span className="text-green-400">Yes</span></p>
+                      <p className="text-green-400 mt-2">✔ Veil initialized successfully!</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Floating badge */}
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: 0.3 }}
+                  className="absolute -bottom-4 -right-4 glass-panel rounded-lg px-4 py-2 border border-primary/30"
+                >
+                  <div className="flex items-center gap-2">
+                    <Icon icon="ph:npm-logo" className="w-5 h-5 text-red-500" />
+                    <code className="text-xs font-mono text-muted-foreground">npx veil-cli init</code>
+                  </div>
+                </motion.div>
+              </motion.div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Problem vs Solution Section */}
+      <section className="py-24 bg-secondary/20">
         <div className="container mx-auto px-4">
           <div className="max-w-5xl mx-auto">
             <div className="text-center mb-16">
