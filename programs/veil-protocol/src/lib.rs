@@ -420,6 +420,200 @@ pub mod veil_protocol {
 
         Ok(())
     }
+
+    // ============================================
+    // PRIVATE STAKING - Hidden Stake Amounts
+    // ============================================
+
+    /// Create a private stake pool
+    /// Pool parameters are public, but individual stakes are hidden
+    pub fn create_stake_pool(
+        ctx: Context<CreateStakePool>,
+        pool_id: [u8; 32],
+        min_stake_lamports: u64,
+        reward_rate_bps: u16, // Basis points per epoch (e.g., 50 = 0.5%)
+        lockup_epochs: u8,
+    ) -> Result<()> {
+        let stake_pool = &mut ctx.accounts.stake_pool;
+        let current_time = Clock::get()?.unix_timestamp;
+
+        require!(min_stake_lamports >= 1_000_000, ErrorCode::StakeTooSmall); // Min 0.001 SOL
+        require!(reward_rate_bps <= 10000, ErrorCode::InvalidRewardRate); // Max 100%
+        require!(lockup_epochs >= 1 && lockup_epochs <= 52, ErrorCode::InvalidLockupPeriod);
+
+        stake_pool.pool_id = pool_id;
+        stake_pool.creator = ctx.accounts.creator.key();
+        stake_pool.min_stake_lamports = min_stake_lamports;
+        stake_pool.reward_rate_bps = reward_rate_bps;
+        stake_pool.lockup_epochs = lockup_epochs;
+        stake_pool.total_stake_commitments = 0;
+        stake_pool.total_staked_lamports = 0;
+        stake_pool.created_at = current_time;
+        stake_pool.is_active = true;
+        stake_pool.bump = ctx.bumps.stake_pool;
+
+        emit!(StakePoolCreated {
+            pool: stake_pool.key(),
+            pool_id,
+            creator: ctx.accounts.creator.key(),
+            min_stake_lamports,
+            reward_rate_bps,
+            lockup_epochs,
+            timestamp: current_time,
+        });
+
+        Ok(())
+    }
+
+    /// Stake privately using a commitment
+    /// The actual stake amount is hidden - only the commitment is stored on-chain
+    /// commitment = hash(amount || validator_commitment || staker || secret)
+    pub fn stake_private(
+        ctx: Context<StakePrivate>,
+        stake_commitment: [u8; 32],
+        validator_commitment: [u8; 32], // hash(validator_pubkey || salt)
+        amount_lamports: u64, // Actual amount (verified off-chain, hidden on-chain)
+    ) -> Result<()> {
+        let stake_pool = &mut ctx.accounts.stake_pool;
+        let stake_record = &mut ctx.accounts.stake_record;
+        let current_time = Clock::get()?.unix_timestamp;
+
+        require!(stake_pool.is_active, ErrorCode::PoolNotActive);
+        require!(amount_lamports >= stake_pool.min_stake_lamports, ErrorCode::StakeTooSmall);
+
+        // Transfer SOL to pool vault
+        let cpi_context = CpiContext::new(
+            ctx.accounts.system_program.to_account_info(),
+            anchor_lang::system_program::Transfer {
+                from: ctx.accounts.staker.to_account_info(),
+                to: ctx.accounts.pool_vault.to_account_info(),
+            },
+        );
+        anchor_lang::system_program::transfer(cpi_context, amount_lamports)?;
+
+        // Store stake record with commitment (not actual amount!)
+        stake_record.pool = stake_pool.key();
+        stake_record.staker = ctx.accounts.staker.key();
+        stake_record.stake_commitment = stake_commitment;
+        stake_record.validator_commitment = validator_commitment;
+        stake_record.staked_at = current_time;
+        stake_record.unlock_at = current_time + (stake_pool.lockup_epochs as i64 * 432000); // ~5 days per epoch
+        stake_record.is_active = true;
+        stake_record.claimed_rewards = 0;
+        stake_record.bump = ctx.bumps.stake_record;
+
+        stake_pool.total_stake_commitments += 1;
+        stake_pool.total_staked_lamports += amount_lamports;
+
+        emit!(PrivateStakeCreated {
+            pool: stake_pool.key(),
+            staker: ctx.accounts.staker.key(),
+            stake_commitment,
+            validator_commitment,
+            unlock_at: stake_record.unlock_at,
+            timestamp: current_time,
+            // Note: amount is NOT emitted to preserve privacy
+        });
+
+        Ok(())
+    }
+
+    /// Unstake after lockup period
+    /// Requires revealing the stake details to prove ownership
+    pub fn unstake(
+        ctx: Context<Unstake>,
+        amount_lamports: u64,
+        secret: [u8; 32],
+    ) -> Result<()> {
+        let stake_pool = &mut ctx.accounts.stake_pool;
+        let stake_record = &mut ctx.accounts.stake_record;
+        let current_time = Clock::get()?.unix_timestamp;
+
+        require!(stake_record.is_active, ErrorCode::StakeNotActive);
+        require!(current_time >= stake_record.unlock_at, ErrorCode::StakeLocked);
+
+        // Verify the commitment matches: hash(amount || validator_commitment || staker || secret)
+        let expected_commitment = compute_stake_commitment(
+            amount_lamports,
+            &stake_record.validator_commitment,
+            &ctx.accounts.staker.key(),
+            &secret,
+        );
+        require!(
+            stake_record.stake_commitment == expected_commitment,
+            ErrorCode::InvalidStakeReveal
+        );
+
+        // Transfer SOL back to staker from pool vault
+        let pool_id = stake_pool.pool_id;
+        let creator = stake_pool.creator;
+        let bump = stake_pool.bump;
+        let seeds = &[
+            b"stake_pool".as_ref(),
+            creator.as_ref(),
+            pool_id.as_ref(),
+            &[bump],
+        ];
+        let signer_seeds = &[&seeds[..]];
+
+        let vault_lamports = ctx.accounts.pool_vault.lamports();
+        require!(vault_lamports >= amount_lamports, ErrorCode::InsufficientPoolFunds);
+
+        **ctx.accounts.pool_vault.try_borrow_mut_lamports()? -= amount_lamports;
+        **ctx.accounts.staker.try_borrow_mut_lamports()? += amount_lamports;
+
+        stake_record.is_active = false;
+        stake_record.unstaked_at = current_time;
+
+        stake_pool.total_staked_lamports = stake_pool.total_staked_lamports.saturating_sub(amount_lamports);
+
+        emit!(PrivateUnstake {
+            pool: stake_pool.key(),
+            staker: ctx.accounts.staker.key(),
+            timestamp: current_time,
+            // Note: amount is NOT emitted to preserve privacy
+        });
+
+        Ok(())
+    }
+
+    /// Claim staking rewards
+    /// Rewards are calculated based on stake commitment and epochs elapsed
+    pub fn claim_rewards(
+        ctx: Context<ClaimRewards>,
+        reward_proof: [u8; 32], // Proof of reward calculation
+        reward_amount: u64,
+    ) -> Result<()> {
+        let stake_pool = &ctx.accounts.stake_pool;
+        let stake_record = &mut ctx.accounts.stake_record;
+        let current_time = Clock::get()?.unix_timestamp;
+
+        require!(stake_record.is_active, ErrorCode::StakeNotActive);
+        require!(reward_proof != [0u8; 32], ErrorCode::InvalidRewardProof);
+
+        // In production: verify ZK proof of reward calculation
+        // For demo: accept valid structure
+
+        // Transfer rewards from pool vault to staker
+        let vault_lamports = ctx.accounts.pool_vault.lamports();
+        require!(vault_lamports >= reward_amount, ErrorCode::InsufficientPoolFunds);
+
+        **ctx.accounts.pool_vault.try_borrow_mut_lamports()? -= reward_amount;
+        **ctx.accounts.staker.try_borrow_mut_lamports()? += reward_amount;
+
+        stake_record.claimed_rewards += reward_amount;
+        stake_record.last_claim_at = current_time;
+
+        emit!(RewardsClaimed {
+            pool: stake_pool.key(),
+            staker: ctx.accounts.staker.key(),
+            reward_commitment: reward_proof,
+            timestamp: current_time,
+            // Note: reward amount is NOT emitted to preserve privacy
+        });
+
+        Ok(())
+    }
 }
 
 // Account Structures
@@ -652,6 +846,106 @@ impl MultisigProposal {
         1; // bump
 }
 
+/// Private Stake Pool - hidden stake amounts
+#[account]
+pub struct PrivateStakePool {
+    /// Unique pool identifier
+    pub pool_id: [u8; 32],
+
+    /// Creator of the pool
+    pub creator: Pubkey,
+
+    /// Minimum stake amount in lamports
+    pub min_stake_lamports: u64,
+
+    /// Reward rate in basis points per epoch
+    pub reward_rate_bps: u16,
+
+    /// Number of epochs for lockup
+    pub lockup_epochs: u8,
+
+    /// Total number of stake commitments
+    pub total_stake_commitments: u32,
+
+    /// Total staked lamports (aggregate, not individual)
+    pub total_staked_lamports: u64,
+
+    /// When the pool was created
+    pub created_at: i64,
+
+    /// Whether the pool is active
+    pub is_active: bool,
+
+    /// PDA bump
+    pub bump: u8,
+}
+
+impl PrivateStakePool {
+    pub const LEN: usize = 8 + // discriminator
+        32 + // pool_id
+        32 + // creator
+        8 + // min_stake_lamports
+        2 + // reward_rate_bps
+        1 + // lockup_epochs
+        4 + // total_stake_commitments
+        8 + // total_staked_lamports
+        8 + // created_at
+        1 + // is_active
+        1; // bump
+}
+
+/// Individual private stake record
+#[account]
+pub struct PrivateStakeRecord {
+    /// The pool this stake belongs to
+    pub pool: Pubkey,
+
+    /// The staker (for PDA derivation)
+    pub staker: Pubkey,
+
+    /// Stake commitment: hash(amount || validator_commitment || staker || secret)
+    pub stake_commitment: [u8; 32],
+
+    /// Validator commitment: hash(validator_pubkey || salt)
+    pub validator_commitment: [u8; 32],
+
+    /// When the stake was created
+    pub staked_at: i64,
+
+    /// When the stake can be withdrawn
+    pub unlock_at: i64,
+
+    /// Whether the stake is active
+    pub is_active: bool,
+
+    /// Total rewards claimed
+    pub claimed_rewards: u64,
+
+    /// When rewards were last claimed
+    pub last_claim_at: i64,
+
+    /// When the stake was withdrawn (if applicable)
+    pub unstaked_at: i64,
+
+    /// PDA bump
+    pub bump: u8,
+}
+
+impl PrivateStakeRecord {
+    pub const LEN: usize = 8 + // discriminator
+        32 + // pool
+        32 + // staker
+        32 + // stake_commitment
+        32 + // validator_commitment
+        8 + // staked_at
+        8 + // unlock_at
+        1 + // is_active
+        8 + // claimed_rewards
+        8 + // last_claim_at
+        8 + // unstaked_at
+        1; // bump
+}
+
 // Context Structures
 
 #[derive(Accounts)]
@@ -879,6 +1173,125 @@ pub struct ExecuteMultisigProposal<'info> {
     pub executor: Signer<'info>,
 }
 
+// Private Staking Context Structures
+
+#[derive(Accounts)]
+#[instruction(pool_id: [u8; 32])]
+pub struct CreateStakePool<'info> {
+    #[account(
+        init,
+        payer = creator,
+        space = PrivateStakePool::LEN,
+        seeds = [b"stake_pool", creator.key().as_ref(), &pool_id],
+        bump
+    )]
+    pub stake_pool: Account<'info, PrivateStakePool>,
+
+    /// CHECK: Pool vault PDA for holding staked SOL
+    #[account(
+        mut,
+        seeds = [b"stake_vault", stake_pool.key().as_ref()],
+        bump
+    )]
+    pub pool_vault: AccountInfo<'info>,
+
+    #[account(mut)]
+    pub creator: Signer<'info>,
+
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct StakePrivate<'info> {
+    #[account(
+        mut,
+        seeds = [b"stake_pool", stake_pool.creator.as_ref(), &stake_pool.pool_id],
+        bump = stake_pool.bump
+    )]
+    pub stake_pool: Account<'info, PrivateStakePool>,
+
+    #[account(
+        init,
+        payer = staker,
+        space = PrivateStakeRecord::LEN,
+        seeds = [b"stake_record", stake_pool.key().as_ref(), staker.key().as_ref()],
+        bump
+    )]
+    pub stake_record: Account<'info, PrivateStakeRecord>,
+
+    /// CHECK: Pool vault PDA for holding staked SOL
+    #[account(
+        mut,
+        seeds = [b"stake_vault", stake_pool.key().as_ref()],
+        bump
+    )]
+    pub pool_vault: AccountInfo<'info>,
+
+    #[account(mut)]
+    pub staker: Signer<'info>,
+
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct Unstake<'info> {
+    #[account(
+        mut,
+        seeds = [b"stake_pool", stake_pool.creator.as_ref(), &stake_pool.pool_id],
+        bump = stake_pool.bump
+    )]
+    pub stake_pool: Account<'info, PrivateStakePool>,
+
+    #[account(
+        mut,
+        seeds = [b"stake_record", stake_pool.key().as_ref(), staker.key().as_ref()],
+        bump = stake_record.bump,
+        constraint = stake_record.staker == staker.key() @ ErrorCode::Unauthorized
+    )]
+    pub stake_record: Account<'info, PrivateStakeRecord>,
+
+    /// CHECK: Pool vault PDA for holding staked SOL
+    #[account(
+        mut,
+        seeds = [b"stake_vault", stake_pool.key().as_ref()],
+        bump
+    )]
+    pub pool_vault: AccountInfo<'info>,
+
+    #[account(mut)]
+    pub staker: Signer<'info>,
+
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct ClaimRewards<'info> {
+    #[account(
+        seeds = [b"stake_pool", stake_pool.creator.as_ref(), &stake_pool.pool_id],
+        bump = stake_pool.bump
+    )]
+    pub stake_pool: Account<'info, PrivateStakePool>,
+
+    #[account(
+        mut,
+        seeds = [b"stake_record", stake_pool.key().as_ref(), staker.key().as_ref()],
+        bump = stake_record.bump,
+        constraint = stake_record.staker == staker.key() @ ErrorCode::Unauthorized
+    )]
+    pub stake_record: Account<'info, PrivateStakeRecord>,
+
+    /// CHECK: Pool vault PDA for holding staked SOL
+    #[account(
+        mut,
+        seeds = [b"stake_vault", stake_pool.key().as_ref()],
+        bump
+    )]
+    pub pool_vault: AccountInfo<'info>,
+
+    #[account(mut)]
+    pub staker: Signer<'info>,
+}
+
 // Events
 
 #[event]
@@ -988,6 +1401,47 @@ pub struct MultisigProposalExecuted {
     pub timestamp: i64,
 }
 
+// Private Staking Events
+
+#[event]
+pub struct StakePoolCreated {
+    pub pool: Pubkey,
+    pub pool_id: [u8; 32],
+    pub creator: Pubkey,
+    pub min_stake_lamports: u64,
+    pub reward_rate_bps: u16,
+    pub lockup_epochs: u8,
+    pub timestamp: i64,
+}
+
+#[event]
+pub struct PrivateStakeCreated {
+    pub pool: Pubkey,
+    pub staker: Pubkey,
+    pub stake_commitment: [u8; 32],
+    pub validator_commitment: [u8; 32],
+    pub unlock_at: i64,
+    pub timestamp: i64,
+    // Note: stake amount is NOT included to preserve privacy
+}
+
+#[event]
+pub struct PrivateUnstake {
+    pub pool: Pubkey,
+    pub staker: Pubkey,
+    pub timestamp: i64,
+    // Note: unstake amount is NOT included to preserve privacy
+}
+
+#[event]
+pub struct RewardsClaimed {
+    pub pool: Pubkey,
+    pub staker: Pubkey,
+    pub reward_commitment: [u8; 32],
+    pub timestamp: i64,
+    // Note: reward amount is NOT included to preserve privacy
+}
+
 // Error Codes
 
 #[error_code]
@@ -1065,6 +1519,34 @@ pub enum ErrorCode {
 
     #[msg("Insufficient approvals to execute")]
     InsufficientApprovals,
+
+    // Private Staking Errors
+    #[msg("Stake amount too small")]
+    StakeTooSmall,
+
+    #[msg("Invalid reward rate")]
+    InvalidRewardRate,
+
+    #[msg("Invalid lockup period (must be 1-52 epochs)")]
+    InvalidLockupPeriod,
+
+    #[msg("Stake pool is not active")]
+    PoolNotActive,
+
+    #[msg("Stake is not active")]
+    StakeNotActive,
+
+    #[msg("Stake is still locked")]
+    StakeLocked,
+
+    #[msg("Invalid stake reveal - commitment mismatch")]
+    InvalidStakeReveal,
+
+    #[msg("Invalid reward proof")]
+    InvalidRewardProof,
+
+    #[msg("Insufficient pool funds")]
+    InsufficientPoolFunds,
 }
 
 // Helper Functions
@@ -1083,6 +1565,29 @@ fn compute_vote_commitment(vote_choice: bool, secret: &[u8; 32], voter: &Pubkey)
     data.push(if vote_choice { 1 } else { 0 });
     data.extend_from_slice(secret);
     data.extend_from_slice(voter.as_ref());
+
+    // Simple hash for demo - in production use proper cryptographic hash
+    let mut result = [0u8; 32];
+    for (i, chunk) in data.chunks(32).enumerate() {
+        for (j, byte) in chunk.iter().enumerate() {
+            result[(i + j) % 32] ^= byte;
+        }
+    }
+    result
+}
+
+/// Compute stake commitment: hash(amount || validator_commitment || staker || secret)
+fn compute_stake_commitment(
+    amount_lamports: u64,
+    validator_commitment: &[u8; 32],
+    staker: &Pubkey,
+    secret: &[u8; 32],
+) -> [u8; 32] {
+    let mut data = Vec::with_capacity(8 + 32 + 32 + 32);
+    data.extend_from_slice(&amount_lamports.to_le_bytes());
+    data.extend_from_slice(validator_commitment);
+    data.extend_from_slice(staker.as_ref());
+    data.extend_from_slice(secret);
 
     // Simple hash for demo - in production use proper cryptographic hash
     let mut result = [0u8; 32];

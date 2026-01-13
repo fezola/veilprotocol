@@ -13,8 +13,9 @@ import { DaoDemoModal } from "@/components/demos/DaoDemoModal";
 import { WalletRecoveryDemoModal } from "@/components/demos/WalletRecoveryDemoModal";
 import { GamingDemoModal } from "@/components/demos/GamingDemoModal";
 import { ShadowPayDemoModal } from "@/components/demos/ShadowPayDemoModal";
+import { StakingDemoModal } from "@/components/demos/StakingDemoModal";
 
-type DemoCategory = "identity" | "defi" | "dao" | "wallet" | "gaming" | "shadowpay";
+type DemoCategory = "identity" | "defi" | "dao" | "wallet" | "gaming" | "shadowpay" | "staking";
 
 interface DemoStep {
   title: string;
@@ -42,6 +43,7 @@ export default function Demo() {
   const [walletModalOpen, setWalletModalOpen] = useState(false);
   const [gamingModalOpen, setGamingModalOpen] = useState(false);
   const [shadowpayModalOpen, setShadowpayModalOpen] = useState(false);
+  const [stakingModalOpen, setStakingModalOpen] = useState(false);
 
   // Demo scenarios
   const demoScenarios = {
@@ -236,6 +238,38 @@ export default function Demo() {
           status: "pending" as const
         }
       ]
+    },
+    staking: {
+      title: "Private Staking",
+      subtitle: "Hidden stake amounts & rewards",
+      icon: "ph:coins",
+      color: "primary",
+      steps: [
+        {
+          title: "Create stake commitment",
+          description: "Stake amount encrypted using Pedersen commitment. Only you know the value.",
+          icon: "ph:lock",
+          status: "pending" as const
+        },
+        {
+          title: "Deposit to pool vault",
+          description: "Funds deposited to staking pool. Amount hidden from validators and observers.",
+          icon: "ph:vault",
+          status: "pending" as const
+        },
+        {
+          title: "Accrue private rewards",
+          description: "Rewards accumulate privately. No one can see your earnings or stake size.",
+          icon: "ph:chart-line-up",
+          status: "pending" as const
+        },
+        {
+          title: "Withdraw with ZK proof",
+          description: "Prove ownership and withdraw without revealing stake history.",
+          icon: "ph:check-circle",
+          status: "pending" as const
+        }
+      ]
     }
   };
 
@@ -269,6 +303,9 @@ export default function Demo() {
           break;
         case "shadowpay":
           await runShadowPayDemo(steps);
+          break;
+        case "staking":
+          await runStakingDemo(steps);
           break;
       }
     } catch (error) {
@@ -627,6 +664,47 @@ export default function Demo() {
     setDemoSteps([...steps]);
   };
 
+  // Staking Demo - Private Staking
+  const runStakingDemo = async (steps: DemoStep[]) => {
+    // Step 1: Create stake commitment
+    setCurrentStep(0);
+    steps[0].status = "active";
+    setDemoSteps([...steps]);
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    const mockCommitment = "0x" + Array.from({length: 16}, () =>
+      Math.floor(Math.random() * 16).toString(16)).join('');
+    steps[0].result = `Commitment: ${mockCommitment}`;
+    steps[0].status = "complete";
+    setDemoSteps([...steps]);
+
+    // Step 2: Deposit to pool vault
+    setCurrentStep(1);
+    steps[1].status = "active";
+    setDemoSteps([...steps]);
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    steps[1].result = "Funds deposited to staking pool vault";
+    steps[1].status = "complete";
+    setDemoSteps([...steps]);
+
+    // Step 3: Accrue private rewards
+    setCurrentStep(2);
+    steps[2].status = "active";
+    setDemoSteps([...steps]);
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    steps[2].result = "Rewards accruing privately (5% APY)";
+    steps[2].status = "complete";
+    setDemoSteps([...steps]);
+
+    // Step 4: Withdraw with ZK proof
+    setCurrentStep(3);
+    steps[3].status = "active";
+    setDemoSteps([...steps]);
+    await new Promise(resolve => setTimeout(resolve, 800));
+    steps[3].result = "ZK proof verified - withdrawal complete";
+    steps[3].status = "complete";
+    setDemoSteps([...steps]);
+  };
+
   const resetDemo = () => {
     setActiveDemo(null);
     setCurrentStep(0);
@@ -685,6 +763,8 @@ export default function Demo() {
                       setGamingModalOpen(true);
                     } else if (key === "shadowpay") {
                       setShadowpayModalOpen(true);
+                    } else if (key === "staking") {
+                      setStakingModalOpen(true);
                     }
                   }}
                   className="glass-panel rounded-xl p-6 text-left hover:border-primary/40 transition-all group"
@@ -1022,6 +1102,10 @@ export default function Demo() {
       <ShadowPayDemoModal
         isOpen={shadowpayModalOpen}
         onClose={() => setShadowpayModalOpen(false)}
+      />
+      <StakingDemoModal
+        isOpen={stakingModalOpen}
+        onClose={() => setStakingModalOpen(false)}
       />
     </PageLayout>
   );

@@ -31,6 +31,7 @@ import FeatureDex from "./pages/features/FeatureDex";
 import FeatureRecovery from "./pages/features/FeatureRecovery";
 import FeatureVoting from "./pages/features/FeatureVoting";
 import FeatureMultisig from "./pages/features/FeatureMultisig";
+import FeatureStaking from "./pages/features/FeatureStaking";
 
 const queryClient = new QueryClient();
 
@@ -102,6 +103,7 @@ const App = () => (
               <Route path="/features/recovery" element={<FeatureRecovery />} />
               <Route path="/features/voting" element={<FeatureVoting />} />
               <Route path="/features/multisig" element={<FeatureMultisig />} />
+              <Route path="/features/staking" element={<FeatureStaking />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

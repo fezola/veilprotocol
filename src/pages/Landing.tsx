@@ -83,6 +83,13 @@ const useCases = [
     borderGradient: "from-green-500/50 to-emerald-500/50"
   },
   {
+    icon: "ph:coins",
+    title: "Private Staking",
+    description: "Stake and earn rewards without revealing amounts",
+    gradient: "from-cyan-500/10 to-teal-500/10",
+    borderGradient: "from-cyan-500/50 to-teal-500/50"
+  },
+  {
     icon: "ph:vote",
     title: "Anonymous Voting",
     description: "Participate in governance without revealing holdings",

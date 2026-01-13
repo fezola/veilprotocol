@@ -618,6 +618,223 @@ export async function executeMultisigProposal(
 }
 
 // ============================================================================
+// PRIVATE STAKING FUNCTIONS
+// ============================================================================
+
+/**
+ * Get the PDA for a private stake pool
+ */
+export function getStakePoolPDA(creatorPublicKey: PublicKey, poolId: Uint8Array): [PublicKey, number] {
+  return PublicKey.findProgramAddressSync(
+    [Buffer.from('stake_pool'), creatorPublicKey.toBuffer(), Buffer.from(poolId)],
+    VEIL_PROGRAM_ID
+  );
+}
+
+/**
+ * Get the PDA for a stake pool vault
+ */
+export function getStakeVaultPDA(stakePoolPDA: PublicKey): [PublicKey, number] {
+  return PublicKey.findProgramAddressSync(
+    [Buffer.from('stake_vault'), stakePoolPDA.toBuffer()],
+    VEIL_PROGRAM_ID
+  );
+}
+
+/**
+ * Get the PDA for a private stake record
+ */
+export function getStakeRecordPDA(stakePoolPDA: PublicKey, stakerPublicKey: PublicKey): [PublicKey, number] {
+  return PublicKey.findProgramAddressSync(
+    [Buffer.from('stake_record'), stakePoolPDA.toBuffer(), stakerPublicKey.toBuffer()],
+    VEIL_PROGRAM_ID
+  );
+}
+
+/**
+ * Create a private stake pool
+ */
+export async function createStakePool(
+  wallet: any,
+  poolId: Uint8Array,
+  minStakeLamports: number,
+  rewardRateBps: number,
+  lockupEpochs: number
+): Promise<string> {
+  if (!wallet.publicKey) {
+    throw new Error('Wallet not connected');
+  }
+
+  const connection = getConnection();
+  const provider = new AnchorProvider(connection, wallet, {
+    commitment: 'confirmed',
+  });
+
+  const program = new Program(idl as Idl, provider);
+  const [stakePoolPDA] = getStakePoolPDA(wallet.publicKey, poolId);
+  const [stakeVaultPDA] = getStakeVaultPDA(stakePoolPDA);
+
+  try {
+    const tx = await program.methods
+      .createStakePool(
+        Array.from(poolId),
+        { toNumber: () => minStakeLamports } as any,
+        rewardRateBps,
+        lockupEpochs
+      )
+      .accounts({
+        stakePool: stakePoolPDA,
+        poolVault: stakeVaultPDA,
+        creator: wallet.publicKey,
+        systemProgram: SystemProgram.programId,
+      })
+      .rpc();
+
+    console.log('Stake pool created:', tx);
+    return tx;
+  } catch (error) {
+    console.error('Error creating stake pool:', error);
+    throw error;
+  }
+}
+
+/**
+ * Stake privately with hidden amount
+ */
+export async function stakePrivate(
+  wallet: any,
+  stakePoolPDA: PublicKey,
+  stakeCommitment: Uint8Array,
+  validatorCommitment: Uint8Array,
+  amountLamports: number
+): Promise<string> {
+  if (!wallet.publicKey) {
+    throw new Error('Wallet not connected');
+  }
+
+  const connection = getConnection();
+  const provider = new AnchorProvider(connection, wallet, {
+    commitment: 'confirmed',
+  });
+
+  const program = new Program(idl as Idl, provider);
+  const [stakeRecordPDA] = getStakeRecordPDA(stakePoolPDA, wallet.publicKey);
+  const [stakeVaultPDA] = getStakeVaultPDA(stakePoolPDA);
+
+  try {
+    const tx = await program.methods
+      .stakePrivate(
+        Array.from(stakeCommitment),
+        Array.from(validatorCommitment),
+        { toNumber: () => amountLamports } as any
+      )
+      .accounts({
+        stakePool: stakePoolPDA,
+        stakeRecord: stakeRecordPDA,
+        poolVault: stakeVaultPDA,
+        staker: wallet.publicKey,
+        systemProgram: SystemProgram.programId,
+      })
+      .rpc();
+
+    console.log('Private stake created:', tx);
+    return tx;
+  } catch (error) {
+    console.error('Error staking privately:', error);
+    throw error;
+  }
+}
+
+/**
+ * Unstake after lockup period
+ */
+export async function unstake(
+  wallet: any,
+  stakePoolPDA: PublicKey,
+  amountLamports: number,
+  secret: Uint8Array
+): Promise<string> {
+  if (!wallet.publicKey) {
+    throw new Error('Wallet not connected');
+  }
+
+  const connection = getConnection();
+  const provider = new AnchorProvider(connection, wallet, {
+    commitment: 'confirmed',
+  });
+
+  const program = new Program(idl as Idl, provider);
+  const [stakeRecordPDA] = getStakeRecordPDA(stakePoolPDA, wallet.publicKey);
+  const [stakeVaultPDA] = getStakeVaultPDA(stakePoolPDA);
+
+  try {
+    const tx = await program.methods
+      .unstake(
+        { toNumber: () => amountLamports } as any,
+        Array.from(secret)
+      )
+      .accounts({
+        stakePool: stakePoolPDA,
+        stakeRecord: stakeRecordPDA,
+        poolVault: stakeVaultPDA,
+        staker: wallet.publicKey,
+        systemProgram: SystemProgram.programId,
+      })
+      .rpc();
+
+    console.log('Unstake completed:', tx);
+    return tx;
+  } catch (error) {
+    console.error('Error unstaking:', error);
+    throw error;
+  }
+}
+
+/**
+ * Claim staking rewards
+ */
+export async function claimRewards(
+  wallet: any,
+  stakePoolPDA: PublicKey,
+  rewardProof: Uint8Array,
+  rewardAmount: number
+): Promise<string> {
+  if (!wallet.publicKey) {
+    throw new Error('Wallet not connected');
+  }
+
+  const connection = getConnection();
+  const provider = new AnchorProvider(connection, wallet, {
+    commitment: 'confirmed',
+  });
+
+  const program = new Program(idl as Idl, provider);
+  const [stakeRecordPDA] = getStakeRecordPDA(stakePoolPDA, wallet.publicKey);
+  const [stakeVaultPDA] = getStakeVaultPDA(stakePoolPDA);
+
+  try {
+    const tx = await program.methods
+      .claimRewards(
+        Array.from(rewardProof),
+        { toNumber: () => rewardAmount } as any
+      )
+      .accounts({
+        stakePool: stakePoolPDA,
+        stakeRecord: stakeRecordPDA,
+        poolVault: stakeVaultPDA,
+        staker: wallet.publicKey,
+      })
+      .rpc();
+
+    console.log('Rewards claimed:', tx);
+    return tx;
+  } catch (error) {
+    console.error('Error claiming rewards:', error);
+    throw error;
+  }
+}
+
+// ============================================================================
 // HELPER FUNCTIONS FOR CRYPTOGRAPHY
 // ============================================================================
 
@@ -652,4 +869,54 @@ export function generateVaultId(): Uint8Array {
  */
 export function generateProposalId(): Uint8Array {
   return crypto.getRandomValues(new Uint8Array(32));
+}
+
+/**
+ * Generate a random pool ID for staking
+ */
+export function generatePoolId(): Uint8Array {
+  return crypto.getRandomValues(new Uint8Array(32));
+}
+
+/**
+ * Generate a random stake secret
+ */
+export function generateStakeSecret(): Uint8Array {
+  return crypto.getRandomValues(new Uint8Array(32));
+}
+
+/**
+ * Create a stake commitment (hash of amount + validator + staker + secret)
+ * In production, use a proper hash function like Poseidon
+ */
+export async function createStakeCommitment(
+  amountLamports: number,
+  validatorCommitment: Uint8Array,
+  stakerPublicKey: PublicKey,
+  secret: Uint8Array
+): Promise<Uint8Array> {
+  const amountBytes = new Uint8Array(8);
+  const view = new DataView(amountBytes.buffer);
+  view.setBigUint64(0, BigInt(amountLamports), true); // little-endian
+
+  const combined = new Uint8Array([
+    ...amountBytes,
+    ...validatorCommitment,
+    ...stakerPublicKey.toBytes(),
+    ...secret,
+  ]);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', combined);
+  return new Uint8Array(hashBuffer);
+}
+
+/**
+ * Create a validator commitment (hash of validator pubkey + salt)
+ */
+export async function createValidatorCommitment(
+  validatorPublicKey: PublicKey,
+  salt: Uint8Array
+): Promise<Uint8Array> {
+  const combined = new Uint8Array([...validatorPublicKey.toBytes(), ...salt]);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', combined);
+  return new Uint8Array(hashBuffer);
 }

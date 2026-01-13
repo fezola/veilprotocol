@@ -12,6 +12,7 @@ const featureItems = [
   { label: "Private Transfers", href: "/features/transfers", icon: "ph:arrows-left-right", description: "Send funds without revealing amounts" },
   { label: "Private Voting", href: "/features/voting", icon: "ph:check-square", description: "Encrypted on-chain voting with hidden choices" },
   { label: "Private Multisig", href: "/features/multisig", icon: "ph:users-three", description: "Stealth signers - hide multisig participants" },
+  { label: "Private Staking", href: "/features/staking", icon: "ph:coins", description: "Hidden stake amounts & rewards" },
   { label: "Token Privacy", href: "/features/tokens", icon: "ph:coins", description: "Private SPL token holdings" },
   { label: "DEX Integration", href: "/features/dex", icon: "ph:swap", description: "Private swaps on Jupiter & Raydium" },
   { label: "Recovery", href: "/features/recovery", icon: "ph:key", description: "Secure wallet recovery without seed phrases" },

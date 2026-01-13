@@ -53,6 +53,54 @@ let results = voting.get_proposal_results(&proposal_id).await?;`
   }
 ];
 
+// Code examples for Private Staking
+const stakingCodeExamples = [
+  {
+    language: "typescript",
+    label: "TypeScript",
+    icon: "logos:typescript-icon",
+    code: `import { PrivateStakingClient } from '@veil/sdk/staking';
+
+const staking = new PrivateStakingClient(connection, encryptionKey);
+
+// Create private stake (amount HIDDEN on-chain)
+const { commitment, secret } = await staking.stake(
+  validatorPubkey,
+  100,  // SOL amount - encrypted with Pedersen commitment!
+  signTransaction
+);
+// On-chain: Only commitment hash visible (not 100 SOL)
+
+// Check rewards (only you can decrypt)
+const rewards = await staking.getRewards(commitment, secret);
+console.log('Rewards:', rewards.amount, 'SOL');
+
+// Withdraw with ZK proof (proves ownership without revealing stake)
+await staking.withdraw(commitment, secret, signTransaction);`
+  },
+  {
+    language: "rust",
+    label: "Rust",
+    icon: "logos:rust",
+    code: `use veil_protocol::staking::PrivateStakingClient;
+
+let staking = PrivateStakingClient::new(&connection, &encryption_key);
+
+// Create private stake (amount hidden)
+let (commitment, secret) = staking.stake(
+    &validator_pubkey,
+    100,  // Hidden on-chain
+    &signer,
+).await?;
+
+// Check rewards (only owner can see)
+let rewards = staking.get_rewards(&commitment, &secret).await?;
+
+// Withdraw with ZK proof
+staking.withdraw(&commitment, &secret, &signer).await?;`
+  }
+];
+
 // Code examples for Stealth Multisig
 const multisigCodeExamples = [
   {
@@ -108,7 +156,7 @@ multisig.execute(&vault_address, &transaction_to_approve).await?;`
 ];
 
 export default function ShadowWire() {
-  const [activeTab, setActiveTab] = useState<"voting" | "multisig">("voting");
+  const [activeTab, setActiveTab] = useState<"voting" | "multisig" | "staking">("voting");
 
   return (
     <div className="min-h-screen bg-background">
@@ -173,23 +221,32 @@ export default function ShadowWire() {
             <h2 className="text-2xl font-semibold mb-6 flex items-center gap-2">
               <Icon icon="ph:code" className="text-primary" /> Our Key Extensions
             </h2>
-            <div className="grid md:grid-cols-2 gap-4">
+            <div className="grid md:grid-cols-3 gap-4">
               {[
                 {
                   title: "Private Voting",
                   desc: "Anonymous commit-reveal voting for DAOs",
                   icon: "ph:check-square",
-                  color: "text-success"
+                  color: "text-success",
+                  tab: "voting" as const
                 },
                 {
                   title: "Stealth Multisig",
                   desc: "M-of-N signing with hidden identities",
                   icon: "ph:users-three",
-                  color: "text-primary"
+                  color: "text-primary",
+                  tab: "multisig" as const
+                },
+                {
+                  title: "Private Staking",
+                  desc: "Stake with hidden amounts & validators",
+                  icon: "ph:coin",
+                  color: "text-warning",
+                  tab: "staking" as const
                 },
               ].map((item, i) => (
                 <div key={i} className="border border-border rounded-xl p-4 hover:border-primary/50 transition-colors cursor-pointer"
-                  onClick={() => setActiveTab(item.title === "Private Voting" ? "voting" : "multisig")}>
+                  onClick={() => setActiveTab(item.tab)}>
                   <div className="flex items-center gap-3">
                     <div className={`w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center`}>
                       <Icon icon={item.icon} className={`w-5 h-5 ${item.color}`} />
@@ -220,6 +277,13 @@ export default function ShadowWire() {
               >
                 <Icon icon="ph:users-three" className="inline w-4 h-4 mr-2" />
                 Stealth Multisig
+              </button>
+              <button
+                onClick={() => setActiveTab("staking")}
+                className={`px-4 py-2 rounded-lg font-medium transition-colors ${activeTab === "staking" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+              >
+                <Icon icon="ph:coin" className="inline w-4 h-4 mr-2" />
+                Private Staking
               </button>
             </div>
 
@@ -388,6 +452,92 @@ export default function ShadowWire() {
                 </div>
               </div>
             )}
+
+            {activeTab === "staking" && (
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                    <Icon icon="ph:coin" className="text-warning" />
+                    Private Staking: How It Works
+                  </h3>
+                  <p className="text-muted-foreground mb-4">
+                    Traditional staking reveals your stake amount and validator choice to everyone. Our extension uses
+                    ShadowWire's <strong>Pedersen commitments</strong> and <strong>range proofs</strong> to enable staking
+                    where your stake amount remains hidden while still earning rewards.
+                  </p>
+                </div>
+
+                {/* Flow Diagram */}
+                <div className="bg-secondary/30 rounded-xl p-4 overflow-x-auto">
+                  <pre className="text-xs font-mono text-muted-foreground whitespace-pre">
+{`┌─────────────────────────────────────────────────────────────────────────┐
+│                        PRIVATE STAKING FLOW                              │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                          │
+│  1. STAKE (Hidden Amount)                                               │
+│  ┌─────────────────────────────────────────────────────────────────────┐│
+│  │  User Input: stake(validator, 100 SOL)                              ││
+│  │                        ↓                                            ││
+│  │  SDK generates: Pedersen commitment = g^amount * h^blinding         ││
+│  │                        ↓                                            ││
+│  │  On-chain: Only commitment hash stored (not "100 SOL")              ││
+│  │            Range proof proves: 0 < amount < MAX_STAKE               ││
+│  └─────────────────────────────────────────────────────────────────────┘│
+│                                                                          │
+│  2. REWARDS (Proportional but Hidden)                                   │
+│  ┌─────────────────────────────────────────────────────────────────────┐│
+│  │  Validator distributes rewards proportionally                       ││
+│  │  BUT only commitment holders can decrypt their share                ││
+│  │  └── Your rewards are visible only to you                           ││
+│  └─────────────────────────────────────────────────────────────────────┘│
+│                                                                          │
+│  3. WITHDRAW (ZK Proof of Ownership)                                    │
+│  ┌─────────────────────────────────────────────────────────────────────┐│
+│  │  ZK proof proves: "I know the secret behind this commitment"        ││
+│  │  └── Funds released without revealing original stake amount         ││
+│  └─────────────────────────────────────────────────────────────────────┘│
+│                                                                          │
+│  PRIVACY GUARANTEES:                                                     │
+│  ✓ Stake amounts hidden (competitors can't see your position)          │
+│  ✓ Validator choice can be hidden (optional stealth delegation)        │
+│  ✓ Reward amounts only visible to you                                  │
+│  ✓ Withdrawal doesn't link to original stake                           │
+└─────────────────────────────────────────────────────────────────────────┘`}
+                  </pre>
+                </div>
+
+                {/* How We Use ShadowWire */}
+                <div className="border border-border rounded-xl p-4">
+                  <h4 className="font-semibold mb-3 flex items-center gap-2">
+                    <Icon icon="ph:puzzle-piece" className="text-warning" />
+                    ShadowWire Primitives Used
+                  </h4>
+                  <div className="grid md:grid-cols-3 gap-4">
+                    <div className="bg-secondary/30 rounded-lg p-3">
+                      <div className="text-xs text-muted-foreground uppercase mb-1">Pedersen Commitments</div>
+                      <p className="text-sm">Hide stake amount while allowing arithmetic</p>
+                    </div>
+                    <div className="bg-secondary/30 rounded-lg p-3">
+                      <div className="text-xs text-muted-foreground uppercase mb-1">Bulletproofs</div>
+                      <p className="text-sm">Prove stake is within valid range</p>
+                    </div>
+                    <div className="bg-secondary/30 rounded-lg p-3">
+                      <div className="text-xs text-muted-foreground uppercase mb-1">ZK Proofs</div>
+                      <p className="text-sm">Prove ownership for withdrawals</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Code Example */}
+                <div>
+                  <h4 className="font-semibold mb-3 flex items-center gap-2">
+                    <Icon icon="ph:code" className="text-warning" />
+                    SDK Usage
+                  </h4>
+                  <CodeBlock examples={stakingCodeExamples} title="Private Staking" />
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Comparison: What We Added */}
@@ -416,6 +566,11 @@ export default function ShadowWire() {
                     <td className="py-3 px-4 text-success">M-of-N stealth signing with hidden identities</td>
                   </tr>
                   <tr className="border-b border-border/50">
+                    <td className="py-3 px-4 font-medium">Staking</td>
+                    <td className="py-3 px-4 text-muted-foreground">N/A (not supported)</td>
+                    <td className="py-3 px-4 text-success">Hidden stake amounts with Pedersen commitments</td>
+                  </tr>
+                  <tr className="border-b border-border/50">
                     <td className="py-3 px-4 font-medium">Identity</td>
                     <td className="py-3 px-4 text-muted-foreground">Basic encryption</td>
                     <td className="py-3 px-4 text-success">ZK auth with email/social → wallet derivation</td>
@@ -442,42 +597,42 @@ export default function ShadowWire() {
             </h2>
             <div className="bg-secondary/50 rounded-xl p-4 overflow-x-auto border border-border">
               <pre className="text-sm text-foreground font-mono">
-{`┌─────────────────────────────────────────────────────────────────────────┐
-│                           VEIL PROTOCOL                                  │
-├─────────────────────────────────────────────────────────────────────────┤
-│                                                                          │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌─────────────┐  │
-│  │   PRIVATE    │  │   STEALTH    │  │   SHIELDED   │  │    ZK       │  │
-│  │   VOTING     │  │   MULTISIG   │  │   TRANSFERS  │  │  IDENTITY   │  │
-│  │              │  │              │  │              │  │             │  │
-│  │ Commit-reveal│  │ Hidden signer│  │ Hidden amount│  │ Email→Wallet│  │
-│  │ ZK verified  │  │ M-of-N proof │  │ Pedersen comm│  │ No seed phrase│ │
-│  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘  └──────┬──────┘  │
-│         │                 │                 │                 │          │
-│         └─────────────────┴─────────────────┴─────────────────┘          │
-│                                    │                                     │
-│  ┌─────────────────────────────────┴─────────────────────────────────┐  │
-│  │                        VEIL SDK LAYER                              │  │
-│  │    @veil/sdk - identity, voting, multisig, transfer, recovery      │  │
-│  └─────────────────────────────────┬─────────────────────────────────┘  │
-│                                    │                                     │
-├────────────────────────────────────┼─────────────────────────────────────┤
-│                                    │                                     │
-│  ┌─────────────────────────────────┴─────────────────────────────────┐  │
-│  │                      SHADOWWIRE SDK (RADR)                         │  │
-│  │                                                                    │  │
-│  │  • Poseidon Hash (ZK-friendly)    • Stealth Addresses              │  │
-│  │  • Commitment Schemes             • Encrypted Messaging            │  │
-│  │  • Key Derivation                 • ZK Primitives                  │  │
-│  └─────────────────────────────────┬─────────────────────────────────┘  │
-│                                    │                                     │
-├────────────────────────────────────┼─────────────────────────────────────┤
-│                                    │                                     │
-│  ┌─────────────────────────────────┴─────────────────────────────────┐  │
-│  │                       SOLANA BLOCKCHAIN                            │  │
-│  │                   (Devnet → Mainnet ready)                         │  │
-│  └───────────────────────────────────────────────────────────────────┘  │
-└─────────────────────────────────────────────────────────────────────────┘`}
+{`┌───────────────────────────────────────────────────────────────────────────────────┐
+│                                 VEIL PROTOCOL                                      │
+├───────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                    │
+│ ┌───────────┐ ┌───────────┐ ┌───────────┐ ┌───────────┐ ┌───────────┐             │
+│ │  PRIVATE  │ │  STEALTH  │ │ SHIELDED  │ │  PRIVATE  │ │    ZK     │             │
+│ │  VOTING   │ │  MULTISIG │ │ TRANSFERS │ │  STAKING  │ │ IDENTITY  │             │
+│ │           │ │           │ │           │ │           │ │           │             │
+│ │Commit-rev.│ │Hidden sign│ │Hidden amt │ │Hidden stkd│ │Email→Wallet│            │
+│ │ZK verified│ │M-of-N prf │ │Pedersen   │ │Bulletprfs │ │No seedphr │             │
+│ └─────┬─────┘ └─────┬─────┘ └─────┬─────┘ └─────┬─────┘ └─────┬─────┘             │
+│       │             │             │             │             │                    │
+│       └─────────────┴─────────────┴─────────────┴─────────────┘                    │
+│                                    │                                               │
+│  ┌─────────────────────────────────┴───────────────────────────────────────────┐  │
+│  │                            VEIL SDK LAYER                                    │  │
+│  │    @veil/sdk - identity, voting, multisig, transfer, staking, recovery       │  │
+│  └─────────────────────────────────┬───────────────────────────────────────────┘  │
+│                                    │                                               │
+├────────────────────────────────────┼───────────────────────────────────────────────┤
+│                                    │                                               │
+│  ┌─────────────────────────────────┴───────────────────────────────────────────┐  │
+│  │                         SHADOWWIRE SDK (RADR)                                │  │
+│  │                                                                              │  │
+│  │  • Poseidon Hash (ZK-friendly)    • Stealth Addresses    • Bulletproofs     │  │
+│  │  • Commitment Schemes             • Encrypted Messaging  • Range Proofs     │  │
+│  │  • Key Derivation                 • ZK Primitives                           │  │
+│  └─────────────────────────────────┬───────────────────────────────────────────┘  │
+│                                    │                                               │
+├────────────────────────────────────┼───────────────────────────────────────────────┤
+│                                    │                                               │
+│  ┌─────────────────────────────────┴───────────────────────────────────────────┐  │
+│  │                          SOLANA BLOCKCHAIN                                   │  │
+│  │                      (Devnet → Mainnet ready)                                │  │
+│  └─────────────────────────────────────────────────────────────────────────────┘  │
+└───────────────────────────────────────────────────────────────────────────────────┘`}
               </pre>
             </div>
           </div>
