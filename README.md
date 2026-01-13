@@ -1,73 +1,140 @@
-# Welcome to your Lovable project
+# Veil Protocol
 
-## Project info
+**Privacy-preserving wallet infrastructure for Solana**
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+## Overview
 
-## How can I edit this code?
+Veil Protocol provides a comprehensive privacy layer for Solana applications, enabling:
 
-There are several ways of editing your application.
+- 🔐 **Private Identity** - Zero-knowledge proof-based wallet identity
+- 🔄 **Social Recovery** - Time-locked recovery without exposing guardians
+- 🗳️ **Private Voting** - Commit-reveal scheme for anonymous governance
+- 👥 **Stealth Multisig** - Hidden signer identities with threshold signatures
+- 💸 **Shielded Payments** - Private transfers via ShadowWire integration
 
-**Use Lovable**
+## Program ID
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+**Devnet:** `5C1VaebPdHZYETnTL18cLJK2RexXmVVhkkYpnYHD5P4h`
 
-Changes made via Lovable will be committed automatically to this repo.
+[View on Solscan](https://solscan.io/account/5C1VaebPdHZYETnTL18cLJK2RexXmVVhkkYpnYHD5P4h?cluster=devnet)
 
-**Use your preferred IDE**
+## Architecture
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### Native On-Chain Features (Veil Protocol)
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+These features are implemented directly in our Solana program:
 
-Follow these steps:
+| Feature | Status | Description |
+|---------|--------|-------------|
+| `initialize_commitment` | ✅ Live | Store privacy-preserving wallet identity |
+| `submit_proof` | ✅ Live | Verify ZK proofs on-chain |
+| `initiate_recovery` | ✅ Live | Start time-locked social recovery |
+| `execute_recovery` | ✅ Live | Complete recovery after timelock |
+| `cancel_recovery` | ✅ Live | Owner cancels recovery attempt |
+| `create_proposal` | ✅ Live | Create private voting proposal |
+| `cast_vote` | ✅ Live | Submit vote commitment (hidden choice) |
+| `reveal_vote` | ✅ Live | Reveal vote after voting ends |
+| `finalize_proposal` | ✅ Live | Tally votes and finalize |
+| `create_multisig` | ✅ Live | Create stealth multisig vault |
+| `create_multisig_proposal` | ✅ Live | Propose transaction for signing |
+| `stealth_sign` | ✅ Live | Sign with hidden identity proof |
+| `execute_multisig_proposal` | ✅ Live | Execute after threshold reached |
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+### External Integrations
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+| Feature | Provider | Description |
+|---------|----------|-------------|
+| Shielded Payments | ShadowWire | Private token transfers with amount hiding |
+| Private Swaps | Jupiter + Privacy Layer | DEX integration with privacy |
+| Token Privacy | Encrypted Token Accounts | Hide token balances |
 
-# Step 3: Install the necessary dependencies.
-npm i
+## Quick Start
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+### Install Dependencies
+
+```bash
+npm install
+```
+
+### Run Development Server
+
+```bash
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+### Use the SDK
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+```typescript
+import {
+  initializeCommitment,
+  createProposal,
+  castVote,
+  createMultisig,
+  stealthSign
+} from './lib/solana';
 
-**Use GitHub Codespaces**
+// Initialize private identity
+const commitment = new Uint8Array(32); // Your ZK commitment
+await initializeCommitment(wallet, commitment);
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+// Create private voting proposal
+await createProposal(wallet, proposalId, metadataHash, votingEnds, revealEnds);
 
-## What technologies are used for this project?
+// Cast hidden vote
+const secret = generateVoteSecret();
+const commitment = await createVoteCommitment(true, secret); // true = yes vote
+await castVote(wallet, proposalPDA, commitment);
 
-This project is built with:
+// Create stealth multisig (2-of-3)
+const signerCommitments = [commitment1, commitment2, commitment3];
+await createMultisig(wallet, vaultId, 2, signerCommitments);
+```
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+## Project Structure
 
-## How can I deploy this project?
+```
+aegis-shield/
+├── programs/veil-protocol/    # Solana program (Rust/Anchor)
+│   └── src/lib.rs             # All on-chain instructions
+├── src/
+│   ├── lib/solana.ts          # TypeScript SDK for program interaction
+│   ├── pages/                 # React pages (Demo, Features, etc.)
+│   └── components/            # UI components
+├── packages/
+│   └── sdk/                   # @veil-protocol/sdk npm package
+├── target/idl/                # Generated IDL from Anchor
+└── Anchor.toml                # Anchor configuration
+```
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+## Technologies
 
-## Can I connect a custom domain to my Lovable project?
+- **Blockchain:** Solana (Devnet)
+- **Smart Contracts:** Anchor Framework 0.32.1
+- **Frontend:** React + Vite + TypeScript
+- **Styling:** Tailwind CSS + shadcn/ui
+- **Wallet:** Solana Wallet Adapter
+- **Cryptography:** ZK proofs, Poseidon hash, commit-reveal schemes
 
-Yes, you can!
+## Development
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+### Build Program
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+```bash
+anchor build
+```
+
+### Deploy to Devnet
+
+```bash
+anchor deploy --provider.cluster devnet
+```
+
+### Run Tests
+
+```bash
+anchor test
+```
+
+## License
+
+MIT

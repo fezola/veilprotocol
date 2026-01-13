@@ -19,7 +19,18 @@ import Guarantees from "./pages/Guarantees";
 import Docs from "./pages/Docs";
 import ShadowPayExplained from "./pages/ShadowPayExplained";
 import CLI from "./pages/CLI";
+import SDK from "./pages/SDK";
+import ShadowWire from "./pages/ShadowWire";
 import NotFound from "./pages/NotFound";
+// Feature pages
+import FeatureIdentity from "./pages/features/FeatureIdentity";
+import FeatureShielded from "./pages/features/FeatureShielded";
+import FeatureTransfers from "./pages/features/FeatureTransfers";
+import FeatureTokens from "./pages/features/FeatureTokens";
+import FeatureDex from "./pages/features/FeatureDex";
+import FeatureRecovery from "./pages/features/FeatureRecovery";
+import FeatureVoting from "./pages/features/FeatureVoting";
+import FeatureMultisig from "./pages/features/FeatureMultisig";
 
 const queryClient = new QueryClient();
 
@@ -80,6 +91,17 @@ const App = () => (
               <Route path="/docs" element={<Docs />} />
               <Route path="/shadowpay-explained" element={<ShadowPayExplained />} />
               <Route path="/cli" element={<CLI />} />
+              <Route path="/sdk" element={<SDK />} />
+              <Route path="/shadowwire" element={<ShadowWire />} />
+              {/* Feature pages */}
+              <Route path="/features/identity" element={<FeatureIdentity />} />
+              <Route path="/features/shielded" element={<FeatureShielded />} />
+              <Route path="/features/transfers" element={<FeatureTransfers />} />
+              <Route path="/features/tokens" element={<FeatureTokens />} />
+              <Route path="/features/dex" element={<FeatureDex />} />
+              <Route path="/features/recovery" element={<FeatureRecovery />} />
+              <Route path="/features/voting" element={<FeatureVoting />} />
+              <Route path="/features/multisig" element={<FeatureMultisig />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

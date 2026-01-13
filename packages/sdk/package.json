@@ -1,0 +1,92 @@
+{
+  "name": "@veil-protocol/sdk",
+  "version": "0.1.0",
+  "description": "Complete privacy infrastructure SDK for Solana - Identity hiding, shielded balances, private transactions, and token privacy",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./identity": {
+      "import": "./dist/identity/index.mjs",
+      "require": "./dist/identity/index.js",
+      "types": "./dist/identity/index.d.ts"
+    },
+    "./recovery": {
+      "import": "./dist/recovery/index.mjs",
+      "require": "./dist/recovery/index.js",
+      "types": "./dist/recovery/index.d.ts"
+    },
+    "./transfer": {
+      "import": "./dist/transfer/index.mjs",
+      "require": "./dist/transfer/index.js",
+      "types": "./dist/transfer/index.d.ts"
+    },
+    "./shielded": {
+      "import": "./dist/shielded/index.mjs",
+      "require": "./dist/shielded/index.js",
+      "types": "./dist/shielded/index.d.ts"
+    },
+    "./tokens": {
+      "import": "./dist/tokens/index.mjs",
+      "require": "./dist/tokens/index.js",
+      "types": "./dist/tokens/index.d.ts"
+    },
+    "./dex": {
+      "import": "./dist/dex/index.mjs",
+      "require": "./dist/dex/index.js",
+      "types": "./dist/dex/index.d.ts"
+    },
+    "./wallet-adapter": {
+      "import": "./dist/wallet-adapter/index.mjs",
+      "require": "./dist/wallet-adapter/index.js",
+      "types": "./dist/wallet-adapter/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest",
+    "lint": "eslint src/",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "solana",
+    "privacy",
+    "zk-proofs",
+    "shielded",
+    "confidential",
+    "wallet",
+    "defi"
+  ],
+  "author": "Veil Protocol",
+  "license": "MIT",
+  "peerDependencies": {
+    "@solana/web3.js": "^1.87.0"
+  },
+  "dependencies": {
+    "@coral-xyz/anchor": "^0.29.0",
+    "crypto-js": "^4.2.0",
+    "tweetnacl": "^1.0.3"
+  },
+  "devDependencies": {
+    "@types/crypto-js": "^4.2.0",
+    "@types/node": "^20.0.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.3.0",
+    "vitest": "^1.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/veil-protocol/sdk"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ]
+}
+

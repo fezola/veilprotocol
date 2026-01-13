@@ -11,23 +11,77 @@ import {
   Transaction,
   SystemProgram,
   TransactionInstruction,
-  SYSVAR_RENT_PUBKEY,
-  SYSVAR_CLOCK_PUBKEY,
 } from '@solana/web3.js';
-import * as borsh from '@coral-xyz/borsh';
-import { AnchorProvider, BN, Program, web3 } from '@coral-xyz/anchor';
 
 // Program ID from deployed Anchor program (deployed to devnet)
-export const VEIL_PROGRAM_ID = new PublicKey('FaSJXt21yZ2WZKLoQYAV9nkTHqYNduDh95nU1uYGZP87');
+export const VEIL_PROGRAM_ID = new PublicKey('5C1VaebPdHZYETnTL18cLJK2RexXmVVhkkYpnYHD5P4h');
 
 // Devnet connection
 export const DEVNET_ENDPOINT = 'https://api.devnet.solana.com';
 
 /**
+ * Helper to send transaction with retry logic and fresh blockhash
+ */
+async function sendTransactionWithRetry(
+  connection: Connection,
+  transaction: Transaction,
+  signTransaction: (tx: Transaction) => Promise<Transaction>,
+  userPubkey: PublicKey,
+  maxRetries: number = 3
+): Promise<string> {
+  let lastError: Error | null = null;
+
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      // Get fresh blockhash for each attempt
+      const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('finalized');
+      transaction.recentBlockhash = blockhash;
+      transaction.feePayer = userPubkey;
+
+      // Sign the transaction
+      const signed = await signTransaction(transaction);
+
+      // Send with skipPreflight for faster submission
+      const signature = await connection.sendRawTransaction(signed.serialize(), {
+        skipPreflight: false,
+        preflightCommitment: 'confirmed',
+        maxRetries: 3,
+      });
+
+      // Wait for confirmation with timeout
+      const confirmation = await connection.confirmTransaction({
+        signature,
+        blockhash,
+        lastValidBlockHeight,
+      }, 'confirmed');
+
+      if (confirmation.value.err) {
+        throw new Error(`Transaction failed: ${JSON.stringify(confirmation.value.err)}`);
+      }
+
+      return signature;
+    } catch (err: any) {
+      lastError = err;
+      console.warn(`Transaction attempt ${i + 1} failed:`, err.message);
+
+      // If it's not a blockhash error, don't retry
+      if (!err.message?.includes('Blockhash') && !err.message?.includes('block height exceeded')) {
+        throw err;
+      }
+
+      // Wait a bit before retry
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
+  }
+
+  throw lastError || new Error('Transaction failed after retries');
+}
+
+/**
  * Get the PDA for a user's wallet account
  */
-export async function getWalletAccountPDA(userPubkey: PublicKey): Promise<[PublicKey, number]> {
-  return await PublicKey.findProgramAddressSync(
+export function getWalletAccountPDA(userPubkey: PublicKey): [PublicKey, number] {
+  return PublicKey.findProgramAddressSync(
     [Buffer.from('wallet'), userPubkey.toBuffer()],
     VEIL_PROGRAM_ID
   );
@@ -44,7 +98,7 @@ export async function initializeCommitment(
   signTransaction: (tx: Transaction) => Promise<Transaction>
 ): Promise<{ signature: string; walletPDA: PublicKey }> {
   // Get the PDA for the wallet account
-  const [walletPDA, bump] = await getWalletAccountPDA(userPubkey);
+  const [walletPDA] = await getWalletAccountPDA(userPubkey);
 
   // Check if account already exists
   const accountInfo = await connection.getAccountInfo(walletPDA);
@@ -70,16 +124,15 @@ export async function initializeCommitment(
     data: instructionData,
   });
 
-  // Build and send transaction
+  // Build transaction (blockhash will be set by sendTransactionWithRetry)
   const transaction = new Transaction().add(instruction);
-  transaction.feePayer = userPubkey;
-  transaction.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
 
-  const signed = await signTransaction(transaction);
-  const signature = await connection.sendRawTransaction(signed.serialize());
-
-  // Wait for confirmation
-  await connection.confirmTransaction(signature, 'confirmed');
+  const signature = await sendTransactionWithRetry(
+    connection,
+    transaction,
+    signTransaction,
+    userPubkey
+  );
 
   return { signature, walletPDA };
 }
@@ -99,7 +152,6 @@ export async function submitProof(
 
   // Serialize the instruction data
   // Discriminator from IDL: [54, 241, 46, 84, 4, 212, 46, 94]
-  // Anchor format: discriminator + borsh-serialized args
   const proofDataBuffer = Buffer.from(proofData);
   const proofLengthBuffer = Buffer.alloc(4);
   proofLengthBuffer.writeUInt32LE(proofDataBuffer.length, 0);
@@ -125,15 +177,8 @@ export async function submitProof(
   });
 
   const transaction = new Transaction().add(instruction);
-  transaction.feePayer = userPubkey;
-  transaction.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
 
-  const signed = await signTransaction(transaction);
-  const signature = await connection.sendRawTransaction(signed.serialize());
-
-  await connection.confirmTransaction(signature, 'confirmed');
-
-  return signature;
+  return sendTransactionWithRetry(connection, transaction, signTransaction, userPubkey);
 }
 
 /**
@@ -164,15 +209,8 @@ export async function initiateRecovery(
   });
 
   const transaction = new Transaction().add(instruction);
-  transaction.feePayer = userPubkey;
-  transaction.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
 
-  const signed = await signTransaction(transaction);
-  const signature = await connection.sendRawTransaction(signed.serialize());
-
-  await connection.confirmTransaction(signature, 'confirmed');
-
-  return signature;
+  return sendTransactionWithRetry(connection, transaction, signTransaction, userPubkey);
 }
 
 /**
@@ -205,15 +243,8 @@ export async function executeRecovery(
   });
 
   const transaction = new Transaction().add(instruction);
-  transaction.feePayer = userPubkey;
-  transaction.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
 
-  const signed = await signTransaction(transaction);
-  const signature = await connection.sendRawTransaction(signed.serialize());
-
-  await connection.confirmTransaction(signature, 'confirmed');
-
-  return signature;
+  return sendTransactionWithRetry(connection, transaction, signTransaction, userPubkey);
 }
 
 /**
@@ -238,15 +269,8 @@ export async function cancelRecovery(
   });
 
   const transaction = new Transaction().add(instruction);
-  transaction.feePayer = userPubkey;
-  transaction.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
 
-  const signed = await signTransaction(transaction);
-  const signature = await connection.sendRawTransaction(signed.serialize());
-
-  await connection.confirmTransaction(signature, 'confirmed');
-
-  return signature;
+  return sendTransactionWithRetry(connection, transaction, signTransaction, userPubkey);
 }
 
 /**
@@ -270,12 +294,42 @@ export async function getWalletAccount(
   }
 
   // Parse account data (skip 8-byte discriminator)
+  // Account structure:
+  // - 8 bytes: discriminator
+  // - 32 bytes: commitment (offset 8-40)
+  // - 32 bytes: owner pubkey (offset 40-72)
+  // - 8 bytes: created_at i64 (offset 72-80)
+  // - 1 byte: recovery_active bool (offset 80)
+  // - 8 bytes: recovery_unlock_at i64 (offset 81-89)
   const data = accountInfo.data;
+
+  // Ensure we have enough data
+  if (data.length < 89) {
+    // Account exists but may have minimal data, return safe defaults
+    return {
+      commitment: data.length >= 40 ? data.subarray(8, 40) : new Uint8Array(32),
+      owner: data.length >= 72 ? new PublicKey(data.subarray(40, 72)) : userPubkey,
+      createdAt: Date.now(),
+      recoveryActive: false,
+      recoveryUnlockAt: 0,
+    };
+  }
+
   const commitment = data.subarray(8, 40);
   const owner = new PublicKey(data.subarray(40, 72));
-  const createdAt = Number(new DataView(data.buffer, 72, 8).getBigInt64(0, true));
-  const recoveryActive = data[136] === 1;
-  const recoveryUnlockAt = Number(new DataView(data.buffer, 145, 8).getBigInt64(0, true));
+
+  // Create a properly aligned buffer for reading i64 values
+  const createdAtBytes = data.subarray(72, 80);
+  const createdAtBuffer = new ArrayBuffer(8);
+  new Uint8Array(createdAtBuffer).set(createdAtBytes);
+  const createdAt = Number(new DataView(createdAtBuffer).getBigInt64(0, true));
+
+  const recoveryActive = data[80] === 1;
+
+  const recoveryUnlockBytes = data.subarray(81, 89);
+  const recoveryUnlockBuffer = new ArrayBuffer(8);
+  new Uint8Array(recoveryUnlockBuffer).set(recoveryUnlockBytes);
+  const recoveryUnlockAt = Number(new DataView(recoveryUnlockBuffer).getBigInt64(0, true));
 
   return {
     commitment,
@@ -293,7 +347,7 @@ export function commitmentToBytes(commitmentHex: string): Uint8Array {
   const hex = commitmentHex.replace(/^0x/, '');
   const bytes = new Uint8Array(32);
   for (let i = 0; i < 32; i++) {
-    bytes[i] = parseInt(hex.substr(i * 2, 2), 16) || 0;
+    bytes[i] = parseInt(hex.substring(i * 2, i * 2 + 2), 16) || 0;
   }
   return bytes;
 }

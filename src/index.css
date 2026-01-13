@@ -144,3 +144,110 @@
     to { opacity: 1; transform: scale(1); }
   }
 }
+
+/* Prism.js GitHub Dark Theme - Syntax Highlighting */
+.code-block code[class*="language-"],
+.code-block pre[class*="language-"] {
+  color: #c9d1d9;
+  text-shadow: none;
+  font-family: 'JetBrains Mono', Consolas, Monaco, 'Andale Mono', monospace;
+  direction: ltr;
+  text-align: left;
+  white-space: pre;
+  word-spacing: normal;
+  word-break: normal;
+  line-height: 1.6;
+  tab-size: 2;
+  hyphens: none;
+}
+
+.code-block .token.comment,
+.code-block .token.prolog,
+.code-block .token.doctype,
+.code-block .token.cdata {
+  color: #8b949e;
+  font-style: italic;
+}
+
+.code-block .token.punctuation {
+  color: #c9d1d9;
+}
+
+.code-block .token.namespace {
+  opacity: 0.7;
+}
+
+.code-block .token.property,
+.code-block .token.tag,
+.code-block .token.boolean,
+.code-block .token.number,
+.code-block .token.constant,
+.code-block .token.symbol,
+.code-block .token.deleted {
+  color: #79c0ff;
+}
+
+.code-block .token.selector,
+.code-block .token.attr-name,
+.code-block .token.string,
+.code-block .token.char,
+.code-block .token.builtin,
+.code-block .token.inserted {
+  color: #a5d6ff;
+}
+
+.code-block .token.operator,
+.code-block .token.entity,
+.code-block .token.url,
+.code-block .language-css .token.string,
+.code-block .style .token.string {
+  color: #c9d1d9;
+}
+
+.code-block .token.atrule,
+.code-block .token.attr-value,
+.code-block .token.keyword {
+  color: #ff7b72;
+}
+
+.code-block .token.function,
+.code-block .token.class-name {
+  color: #d2a8ff;
+}
+
+.code-block .token.regex,
+.code-block .token.important,
+.code-block .token.variable {
+  color: #ffa657;
+}
+
+.code-block .token.important,
+.code-block .token.bold {
+  font-weight: bold;
+}
+
+.code-block .token.italic {
+  font-style: italic;
+}
+
+.code-block .token.entity {
+  cursor: help;
+}
+
+/* Type annotations (for TypeScript/Rust) */
+.code-block .token.type,
+.code-block .token.type-annotation {
+  color: #7ee787;
+}
+
+/* Method/function calls */
+.code-block .token.method,
+.code-block .token.function-variable {
+  color: #d2a8ff;
+}
+
+/* Strings - more visible cyan/light blue */
+.code-block .token.template-string,
+.code-block .token.template-punctuation {
+  color: #a5d6ff;
+}

@@ -21,6 +21,7 @@ import {
   commitmentToBytes,
   getSolscanAccountLink,
   getWalletAccountPDA,
+  getWalletAccount,
 } from "@/lib/veilProgram";
 
 interface IdentityDemoModalProps {
@@ -94,20 +95,32 @@ export function IdentityDemoModal({ isOpen, onClose }: IdentityDemoModalProps) {
       setStep1Status("complete");
       await new Promise(resolve => setTimeout(resolve, 500));
 
-      // Step 2: Submit commitment to blockchain
+      // Step 2: Submit commitment to blockchain (or use existing)
       setCurrentStep(2);
       setStep2Status("active");
 
       const commitmentBytes = commitmentToBytes(authProof.proof.commitment);
-      const result = await initializeCommitment(
-        connection,
-        publicKey,
-        commitmentBytes,
-        signTransaction
-      );
 
-      setCommitmentTx(result.signature);
-      setWalletPDA(result.walletPDA.toBase58());
+      // Check if wallet account already exists
+      const existingAccount = await getWalletAccount(connection, publicKey);
+      const [walletPDAAddress] = await getWalletAccountPDA(publicKey);
+
+      if (existingAccount) {
+        // Account already initialized, skip initialization
+        setCommitmentTx("Already initialized");
+        setWalletPDA(walletPDAAddress.toBase58());
+      } else {
+        // Initialize new commitment
+        const result = await initializeCommitment(
+          connection,
+          publicKey,
+          commitmentBytes,
+          signTransaction
+        );
+        setCommitmentTx(result.signature);
+        setWalletPDA(result.walletPDA.toBase58());
+      }
+
       setStep2Status("complete");
       await new Promise(resolve => setTimeout(resolve, 500));
 

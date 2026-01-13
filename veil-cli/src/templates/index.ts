@@ -180,4 +180,5 @@ export * from "./project.js";
 export * from "./components.js";
 export * from "./config.js";
 export * from "./shadowpay.js";
+export * from "./sdk-integration.js";
 

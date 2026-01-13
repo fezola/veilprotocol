@@ -5,6 +5,7 @@ import { PageLayout } from "@/components/layout/PageLayout";
 import { FeatureCard } from "@/components/ui/FeatureCard";
 import { PrivacyBadge } from "@/components/ui/PrivacyBadge";
 import { ParticleBackground } from "@/components/ui/ParticleBackground";
+import { BrandTicker } from "@/components/ui/BrandTicker";
 
 const features = [
   {
@@ -242,6 +243,19 @@ export default function Landing() {
             <Icon icon="ph:caret-down" className="w-6 h-6 text-primary" />
           </motion.div>
         </motion.div>
+      </section>
+
+      {/* Brand Ticker - Supported Platforms */}
+      <section className="py-16 border-y border-border/30 bg-secondary/10">
+        <div className="container mx-auto px-4">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+          >
+            <BrandTicker speed={40} />
+          </motion.div>
+        </div>
       </section>
 
       {/* How It Works Section */}

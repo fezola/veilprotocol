@@ -25,6 +25,8 @@ import {
   generateTailwindConfig,
   generatePostcssConfig,
   generateProvidersTsx,
+  generateSdkProvider,
+  generateSdkHooks,
 } from "./templates/index.js";
 
 export async function scaffoldProject(config: VeilConfig): Promise<void> {
@@ -77,11 +79,13 @@ export async function scaffoldProject(config: VeilConfig): Promise<void> {
 
     // Hooks
     { path: "hooks/useVeil.ts", content: generateVeilHooks(config) },
-    { path: "hooks/index.ts", content: `export * from "./useVeil.js";\n` },
+    { path: "hooks/useSdk.ts", content: generateSdkHooks() },
+    { path: "hooks/index.ts", content: `export * from "./useVeil.js";\nexport * from "./useSdk.js";\n` },
 
     // Contexts
     { path: "contexts/VeilProvider.tsx", content: generateVeilProvider(config) },
-    { path: "contexts/index.ts", content: `export * from "./VeilProvider.js";\n` },
+    { path: "contexts/VeilSDKProvider.tsx", content: generateSdkProvider(config) },
+    { path: "contexts/index.ts", content: `export * from "./VeilProvider.js";\nexport * from "./VeilSDKProvider.js";\n` },
 
     // Components
     { path: `${srcDir}/components/WalletButton.tsx`, content: generateWalletButton() },

@@ -1,7 +1,7 @@
 {
   "name": "create-veil-app",
-  "version": "0.1.0",
-  "description": "Privacy-first project scaffolding CLI for Solana",
+  "version": "0.2.0",
+  "description": "Privacy-first project scaffolding CLI for Solana with full SDK integration",
   "type": "module",
   "bin": {
     "veil": "./dist/index.js",
@@ -21,11 +21,16 @@
     "scaffold",
     "veil",
     "web3",
-    "wallet"
+    "wallet",
+    "shielded",
+    "zk-proofs",
+    "sdk"
   ],
   "author": "Veil Protocol",
   "license": "MIT",
   "dependencies": {
+    "@veil-protocol/sdk": "file:../packages/sdk",
+    "@solana/web3.js": "^1.87.0",
     "chalk": "^5.3.0",
     "commander": "^12.0.0",
     "fs-extra": "^11.2.0",
