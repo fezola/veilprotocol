@@ -1,4 +1,4 @@
-import { VeilConfig } from "../cli.js";
+import { VeilConfig, TEMPLATE_INFO } from "../cli.js";
 
 export function generateVeilConfig(config: VeilConfig): string {
   return `/**
@@ -99,13 +99,18 @@ export default defineVeilConfig({
 }
 
 export function generateEnvExample(config: VeilConfig): string {
-  let env = `# Veil Configuration
+  let env = `# ============================================
+# Veil Configuration
+# ============================================
+
+# Veil Features Network (voting, staking, multisig)
 NEXT_PUBLIC_NETWORK=${config.network}
 `;
 
   if (config.helius) {
     env += `
-# Helius RPC (get your key at https://helius.dev)
+# Helius RPC for Veil features (${config.network})
+# Get your key at https://helius.dev
 HELIUS_API_KEY=your_helius_api_key
 HELIUS_RPC_URL=https://${config.network}.helius-rpc.com/?api-key=YOUR_KEY
 HELIUS_WEBHOOK_SECRET=your_webhook_secret
@@ -114,7 +119,16 @@ HELIUS_WEBHOOK_SECRET=your_webhook_secret
 
   if (config.shadowPay) {
     env += `
-# ShadowPay Integration
+# ============================================
+# ShadowPay Configuration (MAINNET)
+# ============================================
+# ⚠️  ShadowPay uses MAINNET for real private transfers
+# This is separate from Veil features which use ${config.network}
+
+# Mainnet RPC for ShadowPay (Helius recommended for production)
+NEXT_PUBLIC_SHADOWPAY_RPC=https://mainnet.helius-rpc.com/?api-key=YOUR_KEY
+
+# Optional: ShadowPay API for enhanced features
 SHADOWPAY_API_KEY=your_shadowpay_key
 `;
   }
@@ -123,31 +137,49 @@ SHADOWPAY_API_KEY=your_shadowpay_key
 }
 
 export function generateReadme(config: VeilConfig): string {
+  const srcDir = config.framework === "nextjs" ? "app" : "src";
+  const templateInfo = TEMPLATE_INFO[config.template];
+
   return `# ${config.projectName}
 
-A privacy-first Solana application built with Veil.
+**${templateInfo.name}** — ${templateInfo.description}
 
-## What is Veil?
+A privacy-first Solana application built with Veil + ShadowWire.
 
-Veil does not make Solana private.
-It makes **using Solana safely** private.
+## Privacy Architecture
+
+This app includes the **complete Veil privacy stack**:
+
+| Feature | Description | Network |
+|---------|-------------|---------|
+| 🔐 **Identity** | ZK authentication, no PII on-chain | ${config.network} |
+| 🔄 **Recovery** | Shamir secret sharing, hidden guardians | ${config.network} |
+| 🗳️ **Voting** | Commit-reveal privacy | ${config.network} |
+| 📊 **Staking** | Hidden amounts via Pedersen | ${config.network} |
+| 👥 **Multisig** | Stealth signers | ${config.network} |
+${config.features.shadowpay ? `| ⚡ **ShadowPay** | Private transfers via @radr/shadowwire | mainnet |` : ""}
 
 ## What's Private vs Public
 
 | Aspect | Private | Public |
 |--------|---------|--------|
 | Your identity | ✅ Never on-chain | |
-| Wallet address | ✅ Unlinkable to you | |
+| Wallet access method | ✅ Hidden | |
 | Recovery guardians | ✅ Hidden | |
-| Transaction amounts | | ❌ Visible |
-| Transaction recipients | | ❌ Visible |
+| Vote choices | ✅ Hidden until reveal | |
+| Stake amounts | ✅ Committed privately | |
+| Transaction amounts | | ❌ Visible (unless via ShadowPay) |
 
 ## Project Structure
 
 \`\`\`
-/${config.template === "nextjs" ? "app" : "src"}        → Frontend application
-/privacy    → Privacy modules (login, recovery, access)
-/infra      → Infrastructure (RPC, Helius)
+/${srcDir}              → Frontend application
+/${srcDir}/components   → UI & privacy components
+/lib/privacy     → Privacy modules (login, recovery, access)
+/lib/veil        → Veil SDK integration (RPC, Helius)
+${config.features.shadowpay ? `/lib/shadowpay   → ShadowWire private transfers (mainnet)` : ""}
+/hooks           → React hooks for Veil SDK
+/contexts        → Provider contexts
 \`\`\`
 
 ## Getting Started
@@ -163,13 +195,14 @@ cp .env.example .env
 pnpm dev
 \`\`\`
 
-## Privacy Guarantees
+## Network Configuration
 
-See \`/privacy/guarantees.ts\` for documented privacy guarantees.
+- **Veil Features**: Run on \`${config.network}\` for development
+- **ShadowPay**: Runs on \`mainnet\` for real private transfers
 
 ---
 
-Built with [Veil](https://github.com/veil-protocol) — Privacy-first access & recovery for Solana
+Built with [Veil](https://github.com/veil-protocol) + [ShadowWire](https://shadowwire.io)
 `;
 }
 

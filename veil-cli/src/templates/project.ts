@@ -1,7 +1,7 @@
-import { VeilConfig } from "../cli.js";
+import { VeilConfig, TEMPLATE_INFO } from "../cli.js";
 
 export function generatePackageJson(config: VeilConfig): string {
-  const isNext = config.template === "nextjs";
+  const isNext = config.framework === "nextjs";
 
   const deps: Record<string, string> = {
     "@solana/web3.js": "^1.95.0",
@@ -11,6 +11,11 @@ export function generatePackageJson(config: VeilConfig): string {
     "@solana/wallet-adapter-phantom": "^0.9.24",
     "@solana/wallet-adapter-solflare": "^0.6.28",
   };
+
+  // Add ShadowWire for mainnet private transfers
+  if (config.features.shadowpay) {
+    deps["@radr/shadowwire"] = "^0.1.0";
+  }
 
   const devDeps: Record<string, string> = {
     "typescript": "^5.3.3",
@@ -48,9 +53,11 @@ export function generatePackageJson(config: VeilConfig): string {
         preview: "vite preview",
       };
 
+  const templateInfo = TEMPLATE_INFO[config.template];
   const pkg = {
     name: config.projectName,
     version: "0.1.0",
+    description: `${templateInfo.name} - ${templateInfo.description}. Built with Veil privacy stack.`,
     private: true,
     scripts,
     dependencies: deps,
@@ -61,7 +68,7 @@ export function generatePackageJson(config: VeilConfig): string {
 }
 
 export function generateTsConfig(config: VeilConfig): string {
-  const isNext = config.template === "nextjs";
+  const isNext = config.framework === "nextjs";
 
   if (isNext) {
     return JSON.stringify({

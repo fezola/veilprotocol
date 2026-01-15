@@ -1,6 +1,6 @@
 import fs from "fs-extra";
 import path from "path";
-import { VeilConfig } from "./cli.js";
+import { VeilConfig, TEMPLATE_INFO } from "./cli.js";
 import {
   generateVeilConfig,
   generateEnvExample,
@@ -35,20 +35,26 @@ export async function scaffoldProject(config: VeilConfig): Promise<void> {
   // Create project directory
   await fs.ensureDir(projectPath);
 
-  // Create folder structure
-  const srcDir = config.template === "nextjs" ? "app" : "src";
+  // Create folder structure based on framework
+  const srcDir = config.framework === "nextjs" ? "app" : "src";
   const folders = [
     srcDir,
     `${srcDir}/components`,
-    "privacy",
-    "infra",
+    `${srcDir}/components/privacy`,
+    `${srcDir}/components/ui`,
+    "lib",
+    "lib/privacy",
+    "lib/veil",
     "hooks",
     "contexts",
+    "types",
   ];
 
-  if (config.shadowPay) {
-    folders.push("shadowpay");
-  }
+  // Add feature-specific folders
+  if (config.features.shadowpay) folders.push("lib/shadowpay");
+  if (config.features.voting) folders.push("lib/voting");
+  if (config.features.staking) folders.push("lib/staking");
+  if (config.features.multisig) folders.push("lib/multisig");
 
   for (const folder of folders) {
     await fs.ensureDir(path.join(projectPath, folder));
@@ -65,17 +71,17 @@ export async function scaffoldProject(config: VeilConfig): Promise<void> {
     { path: "tailwind.config.js", content: generateTailwindConfig(config) },
     { path: "postcss.config.js", content: generatePostcssConfig() },
 
-    // Privacy module
-    { path: "privacy/login.ts", content: generateLoginTs() },
-    { path: "privacy/recovery.ts", content: generateRecoveryTs() },
-    { path: "privacy/access.ts", content: generateAccessTs() },
-    { path: "privacy/guarantees.ts", content: generateGuaranteesTs() },
-    { path: "privacy/index.ts", content: `export * from "./login.js";\nexport * from "./recovery.js";\nexport * from "./access.js";\nexport * from "./guarantees.js";\n` },
+    // Privacy/Veil lib modules
+    { path: "lib/privacy/login.ts", content: generateLoginTs() },
+    { path: "lib/privacy/recovery.ts", content: generateRecoveryTs() },
+    { path: "lib/privacy/access.ts", content: generateAccessTs() },
+    { path: "lib/privacy/guarantees.ts", content: generateGuaranteesTs() },
+    { path: "lib/privacy/index.ts", content: `export * from "./login.js";\nexport * from "./recovery.js";\nexport * from "./access.js";\nexport * from "./guarantees.js";\n` },
 
-    // Infrastructure module
-    { path: "infra/rpc.ts", content: generateRpcTs(config) },
-    { path: "infra/helius.ts", content: generateHeliusTs(config) },
-    { path: "infra/index.ts", content: `export * from "./rpc.js";\nexport * from "./helius.js";\n` },
+    // Veil SDK integration
+    { path: "lib/veil/rpc.ts", content: generateRpcTs(config) },
+    { path: "lib/veil/helius.ts", content: generateHeliusTs(config) },
+    { path: "lib/veil/index.ts", content: `export * from "./rpc.js";\nexport * from "./helius.js";\n` },
 
     // Hooks
     { path: "hooks/useVeil.ts", content: generateVeilHooks(config) },
@@ -89,7 +95,7 @@ export async function scaffoldProject(config: VeilConfig): Promise<void> {
 
     // Components
     { path: `${srcDir}/components/WalletButton.tsx`, content: generateWalletButton() },
-    { path: `${srcDir}/components/PrivacyStatus.tsx`, content: generatePrivacyStatus() },
+    { path: `${srcDir}/components/privacy/PrivacyStatus.tsx`, content: generatePrivacyStatus() },
 
     // App files
     { path: `${srcDir}/page.tsx`, content: generateAppEntry(config) },
@@ -99,13 +105,13 @@ export async function scaffoldProject(config: VeilConfig): Promise<void> {
   ];
 
   // Add Next.js config if using Next.js
-  if (config.template === "nextjs") {
+  if (config.framework === "nextjs") {
     files.push({ path: "next.config.js", content: generateNextConfig() });
   }
 
   // Add ShadowPay module if enabled
-  if (config.shadowPay) {
-    files.push({ path: "shadowpay/index.ts", content: generateShadowPayModule(config) });
+  if (config.features.shadowpay) {
+    files.push({ path: "lib/shadowpay/index.ts", content: generateShadowPayModule(config) });
   }
 
   // Write all files

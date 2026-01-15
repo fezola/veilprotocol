@@ -3,11 +3,67 @@ import chalk from "chalk";
 import ora from "ora";
 import { scaffoldProject } from "./scaffold.js";
 
+// ============================================================================
+// TEMPLATE CATEGORIES
+// ============================================================================
+
+/**
+ * Application template categories
+ * Each category scaffolds a complete, production-ready app with full privacy stack
+ */
+export type TemplateCategory =
+  // DeFi Templates
+  | "dex"           // DEX interface with private swaps
+  | "lending"       // Lending protocol with private positions
+  | "yield"         // Yield farming with private stakes
+  | "pool"          // Liquidity pool with private deposits
+  // DApp Templates
+  | "gaming"        // Gaming app with private assets
+  | "nft"           // NFT marketplace with private bids
+  | "social"        // Social platform with private messaging
+  | "governance"    // DAO governance with private voting
+  // Exchange Templates
+  | "cex"           // CEX-style interface
+  | "aggregator"    // DEX aggregator with private routing
+  | "trading"       // Trading dashboard
+  // Wallet Templates
+  | "wallet"        // Multi-sig wallet with stealth signers
+  | "portfolio"     // Portfolio tracker with private holdings
+  | "payments"      // Payment app with ShadowPay
+  // Basic template
+  | "basic";        // Minimal starter
+
 export type ShadowPayMode = "app" | "wallet" | false;
+export type FrameworkChoice = "nextjs" | "vite";
+
+// Template metadata for CLI display
+export const TEMPLATE_INFO: Record<TemplateCategory, { name: string; description: string; category: string }> = {
+  // DeFi
+  dex: { name: "DEX Interface", description: "Private swaps via ShadowWire", category: "DeFi" },
+  lending: { name: "Lending Protocol", description: "Private lending positions", category: "DeFi" },
+  yield: { name: "Yield Farming", description: "Private stake amounts", category: "DeFi" },
+  pool: { name: "Liquidity Pool", description: "Private LP deposits", category: "DeFi" },
+  // DApp
+  gaming: { name: "Gaming App", description: "Private game assets & scores", category: "DApp" },
+  nft: { name: "NFT Marketplace", description: "Private bids & offers", category: "DApp" },
+  social: { name: "Social Platform", description: "Private messaging & identity", category: "DApp" },
+  governance: { name: "DAO Governance", description: "Private voting & proposals", category: "DApp" },
+  // Exchange
+  cex: { name: "Exchange Interface", description: "CEX-style with privacy", category: "Exchange" },
+  aggregator: { name: "DEX Aggregator", description: "Private swap routing", category: "Exchange" },
+  trading: { name: "Trading Dashboard", description: "Private order books", category: "Exchange" },
+  // Wallet
+  wallet: { name: "Multi-sig Wallet", description: "Stealth signers & treasury", category: "Wallet" },
+  portfolio: { name: "Portfolio Tracker", description: "Private holdings view", category: "Wallet" },
+  payments: { name: "Payment App", description: "Full ShadowPay integration", category: "Wallet" },
+  // Basic
+  basic: { name: "Basic Starter", description: "Minimal privacy-first app", category: "Starter" },
+};
 
 export interface VeilOptions {
   name?: string;
-  template?: "nextjs" | "vite";
+  template?: TemplateCategory;
+  framework?: FrameworkChoice;
   helius?: boolean;
   shadowPay?: boolean;
   shadowPayMode?: "app" | "wallet";
@@ -16,10 +72,20 @@ export interface VeilOptions {
 
 export interface VeilConfig {
   projectName: string;
-  template: "nextjs" | "vite";
+  template: TemplateCategory;
+  framework: FrameworkChoice;
   helius: boolean;
   shadowPay: ShadowPayMode;
   network: "devnet" | "localnet";
+  // All templates include the full privacy stack
+  features: {
+    identity: boolean;
+    recovery: boolean;
+    voting: boolean;
+    staking: boolean;
+    multisig: boolean;
+    shadowpay: boolean;
+  };
 }
 
 export async function runInit(options: VeilOptions): Promise<void> {
@@ -43,31 +109,39 @@ export async function runInit(options: VeilOptions): Promise<void> {
 }
 
 async function promptUser(options: VeilOptions): Promise<VeilConfig> {
-  // Check if all required options are provided (non-interactive mode)
-  const hasAllOptions = options.name && options.template && options.network && options.helius !== undefined;
+  // Non-interactive mode: all required options provided via CLI flags
+  const hasAllOptions = options.name && options.template && options.framework && options.network;
 
   if (hasAllOptions) {
-    let shadowPayMode: ShadowPayMode = false;
-    if (options.shadowPay && options.shadowPayMode) {
-      shadowPayMode = options.shadowPayMode;
-    }
+    const shadowPayMode: ShadowPayMode = options.shadowPay ? (options.shadowPayMode || "app") : false;
     return {
       projectName: options.name!,
       template: options.template!,
+      framework: options.framework!,
       helius: options.helius ?? true,
       shadowPay: shadowPayMode,
       network: options.network!,
+      features: {
+        identity: true,
+        recovery: true,
+        voting: true,
+        staking: true,
+        multisig: true,
+        shadowpay: !!options.shadowPay,
+      },
     };
   }
 
-  const questions = [];
+  // Interactive mode: prompt for each option
+  const questions: any[] = [];
 
+  // 1. Project name
   if (!options.name) {
     questions.push({
       type: "input",
       name: "projectName",
       message: "Project name:",
-      default: "veil-app",
+      default: "my-veil-app",
       validate: (input: string) => {
         if (/^[a-z0-9-]+$/.test(input)) return true;
         return "Project name must be lowercase with hyphens only";
@@ -75,83 +149,130 @@ async function promptUser(options: VeilOptions): Promise<VeilConfig> {
     });
   }
 
+  const initialAnswers = await inquirer.prompt(questions);
+
+  // 2. Template category selection (if not provided)
+  let selectedTemplate: TemplateCategory = options.template || "basic";
+
   if (!options.template) {
-    questions.push({
+    // First, ask for category
+    const categoryAnswer = await inquirer.prompt([{
       type: "list",
-      name: "template",
+      name: "category",
+      message: "What are you building?",
+      choices: [
+        { name: chalk.cyan("🏦 DeFi") + " — DEX, Lending, Yield, Pools", value: "defi" },
+        { name: chalk.magenta("🎮 DApp") + " — Gaming, NFT, Social, Governance", value: "dapp" },
+        { name: chalk.yellow("📊 Exchange") + " — CEX, Aggregator, Trading", value: "exchange" },
+        { name: chalk.green("👛 Wallet") + " — Multisig, Portfolio, Payments", value: "wallet" },
+        { name: chalk.dim("📦 Basic") + " — Minimal starter template", value: "basic" },
+      ],
+    }]);
+
+    if (categoryAnswer.category === "basic") {
+      selectedTemplate = "basic";
+    } else {
+      // Show templates for selected category
+      const templateChoices = Object.entries(TEMPLATE_INFO)
+        .filter(([_, info]) => info.category.toLowerCase() === categoryAnswer.category)
+        .map(([key, info]) => ({
+          name: `${info.name} — ${info.description}`,
+          value: key,
+        }));
+
+      const templateAnswer = await inquirer.prompt([{
+        type: "list",
+        name: "template",
+        message: "Select template:",
+        choices: templateChoices,
+      }]);
+      selectedTemplate = templateAnswer.template as TemplateCategory;
+    }
+  }
+
+  // 3. Framework choice
+  let framework: FrameworkChoice = options.framework || "nextjs";
+  if (!options.framework) {
+    const frameworkAnswer = await inquirer.prompt([{
+      type: "list",
+      name: "framework",
       message: "Frontend framework:",
       choices: [
         { name: "Next.js (recommended)", value: "nextjs" },
         { name: "Vite + React", value: "vite" },
       ],
-      default: "nextjs",
-    });
+    }]);
+    framework = frameworkAnswer.framework;
   }
 
+  // 4. Helius integration
+  let helius = options.helius ?? true;
   if (options.helius === undefined) {
-    questions.push({
+    const heliusAnswer = await inquirer.prompt([{
       type: "confirm",
       name: "helius",
-      message: "Enable Helius RPC & webhooks? (recommended)",
+      message: "Enable Helius RPC? (recommended for production)",
       default: true,
-    });
+    }]);
+    helius = heliusAnswer.helius;
   }
 
-  if (options.shadowPay === undefined) {
-    questions.push({
-      type: "confirm",
-      name: "enableShadowPay",
-      message: "Enable ShadowPay private payments?",
-      default: false,
-    });
+  // 5. ShadowPay integration (mainnet private payments)
+  let shadowPayMode: ShadowPayMode = false;
+  const wantsShadowPay = options.shadowPay ?? true; // Default to true for full privacy
+
+  if (wantsShadowPay) {
+    console.log();
+    console.log(chalk.yellow("⚡ ShadowPay uses mainnet for real private payments"));
+    console.log(chalk.dim("   Veil features (voting, staking, multisig) work on devnet"));
+    console.log();
+
+    const shadowPayAnswer = await inquirer.prompt([{
+      type: "list",
+      name: "mode",
+      message: "ShadowPay mode:",
+      choices: [
+        { name: "App — Receive private payments from users", value: "app" },
+        { name: "Wallet — Send private payments to apps/users", value: "wallet" },
+        { name: "Skip — Don't include ShadowPay", value: "skip" },
+      ],
+    }]);
+
+    if (shadowPayAnswer.mode !== "skip") {
+      shadowPayMode = shadowPayAnswer.mode;
+    }
   }
 
+  // 6. Network (for Veil features, not ShadowPay)
+  let network: "devnet" | "localnet" = options.network || "devnet";
   if (!options.network) {
-    questions.push({
+    const networkAnswer = await inquirer.prompt([{
       type: "list",
       name: "network",
-      message: "Network:",
+      message: "Veil features network:",
       choices: [
         { name: "Devnet (recommended)", value: "devnet" },
         { name: "Localnet", value: "localnet" },
       ],
-      default: "devnet",
-    });
-  }
-
-  const answers = await inquirer.prompt(questions);
-
-  // If ShadowPay is enabled, ask for mode
-  let shadowPayMode: ShadowPayMode = false;
-  const wantsShadowPay = options.shadowPay ?? answers.enableShadowPay;
-
-  if (wantsShadowPay) {
-    const shadowPayAnswer = await inquirer.prompt([
-      {
-        type: "list",
-        name: "shadowPayMode",
-        message: "What are you building?",
-        choices: [
-          {
-            name: "App — Receive private payments from users",
-            value: "app"
-          },
-          {
-            name: "Wallet — Send private payments to apps/users",
-            value: "wallet"
-          },
-        ],
-      },
-    ]);
-    shadowPayMode = shadowPayAnswer.shadowPayMode;
+    }]);
+    network = networkAnswer.network;
   }
 
   return {
-    projectName: options.name || answers.projectName,
-    template: options.template || answers.template,
-    helius: options.helius ?? answers.helius ?? true,
+    projectName: options.name || initialAnswers.projectName,
+    template: selectedTemplate,
+    framework,
+    helius,
     shadowPay: shadowPayMode,
-    network: options.network || answers.network,
+    network,
+    features: {
+      identity: true,
+      recovery: true,
+      voting: true,
+      staking: true,
+      multisig: true,
+      shadowpay: shadowPayMode !== false,
+    },
   };
 }
 

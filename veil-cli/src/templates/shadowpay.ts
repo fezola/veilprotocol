@@ -11,18 +11,31 @@ export function generateShadowPayModule(config: VeilConfig): string {
 
 function generateShadowPayApp(): string {
   return `/**
- * ShadowPay - App Mode
- * 
+ * ShadowPay - App Mode (MAINNET)
+ *
+ * ⚠️  IMPORTANT: ShadowPay uses MAINNET for real private transfers
+ *
  * Your app RECEIVES private payments from users.
  * Users can pay you without revealing their identity to you.
- * 
+ *
  * PRIVACY GUARANTEE:
  * - You receive payments but don't know who sent them
  * - Payment amounts are still visible on-chain
  * - User identity is protected via commitment schemes
+ *
+ * NETWORK: mainnet-beta (real SOL/tokens)
+ * This is separate from Veil features which run on devnet
  */
 
-import { PublicKey, Transaction, Connection } from "@solana/web3.js";
+import { PublicKey, Transaction, Connection, clusterApiUrl } from "@solana/web3.js";
+
+// ShadowPay always uses mainnet for real private transfers
+export const SHADOWPAY_NETWORK = "mainnet-beta";
+export const SHADOWPAY_RPC = process.env.NEXT_PUBLIC_SHADOWPAY_RPC || clusterApiUrl("mainnet-beta");
+
+export function getShadowPayConnection(): Connection {
+  return new Connection(SHADOWPAY_RPC, "confirmed");
+}
 
 export interface PrivatePaymentRequest {
   /** Amount in lamports */
@@ -128,18 +141,31 @@ export function onPaymentReceived(
 
 function generateShadowPayWallet(): string {
   return `/**
- * ShadowPay - Wallet Mode
- * 
+ * ShadowPay - Wallet Mode (MAINNET)
+ *
+ * ⚠️  IMPORTANT: ShadowPay uses MAINNET for real private transfers
+ *
  * Your wallet SENDS private payments to apps/users.
  * You can pay without revealing your identity to recipients.
- * 
+ *
  * PRIVACY GUARANTEE:
  * - Recipients don't know your identity
  * - Payment is verified via commitment proofs
  * - Your wallet address is not directly linked
+ *
+ * NETWORK: mainnet-beta (real SOL/tokens)
+ * This is separate from Veil features which run on devnet
  */
 
-import { PublicKey, Transaction, Connection, Keypair } from "@solana/web3.js";
+import { PublicKey, Transaction, Connection, Keypair, clusterApiUrl } from "@solana/web3.js";
+
+// ShadowPay always uses mainnet for real private transfers
+export const SHADOWPAY_NETWORK = "mainnet-beta";
+export const SHADOWPAY_RPC = process.env.NEXT_PUBLIC_SHADOWPAY_RPC || clusterApiUrl("mainnet-beta");
+
+export function getShadowPayConnection(): Connection {
+  return new Connection(SHADOWPAY_RPC, "confirmed");
+}
 
 export interface PrivatePaymentIntent {
   /** Amount in lamports */

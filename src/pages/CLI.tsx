@@ -3,32 +3,57 @@ import { motion } from "framer-motion";
 import { PageLayout } from "@/components/layout/PageLayout";
 
 const installSteps = [
-  { command: "npx veil-cli init my-app", description: "Initialize a new Veil project" },
+  { command: "npx create-veil-app my-app", description: "Initialize a new Veil project" },
   { command: "cd my-app", description: "Navigate to your project" },
-  { command: "npm install", description: "Install dependencies" },
-  { command: "npm run dev", description: "Start development server" },
+  { command: "pnpm install", description: "Install dependencies" },
+  { command: "pnpm dev", description: "Start development server" },
+];
+
+const templates = [
+  { category: "DeFi", items: ["dex", "lending", "yield", "pool"] },
+  { category: "DApp", items: ["gaming", "nft", "social", "governance"] },
+  { category: "Exchange", items: ["cex", "aggregator", "trading"] },
+  { category: "Wallet", items: ["wallet", "portfolio", "payments"] },
+  { category: "Starter", items: ["basic"] },
 ];
 
 const features = [
   {
     icon: "ph:rocket-launch",
-    title: "Quick Start",
-    description: "Scaffold a privacy-first Solana app in under 60 seconds",
+    title: "15 Templates",
+    description: "DEX, Lending, NFT, Gaming, Wallet, and more — all privacy-first",
   },
   {
     icon: "ph:shield-check",
-    title: "Privacy Built-In",
-    description: "All privacy modules pre-configured: login, recovery, access control",
+    title: "Full Privacy Stack",
+    description: "Identity, Recovery, Voting, Staking, Multisig pre-configured",
   },
   {
     icon: "ph:plug",
     title: "ShadowPay Ready",
-    description: "Optional private payments integration for apps and wallets",
+    description: "Mainnet private payments via @radr/shadowwire",
   },
   {
     icon: "ph:code",
     title: "TypeScript First",
     description: "Full type safety with Next.js or Vite templates",
+  },
+];
+
+const npmPackages = [
+  {
+    name: "@veil-protocol/sdk",
+    version: "0.1.0",
+    description: "Privacy SDK with ZK identity, shielded balances, recovery",
+    install: "npm install @veil-protocol/sdk",
+    link: "https://www.npmjs.com/package/@veil-protocol/sdk",
+  },
+  {
+    name: "create-veil-app",
+    version: "0.3.2",
+    description: "CLI to scaffold privacy-first Solana apps",
+    install: "npx create-veil-app my-app",
+    link: "https://www.npmjs.com/package/create-veil-app",
   },
 ];
 
@@ -57,11 +82,44 @@ export default function CLI() {
             </p>
           </motion.div>
 
-          {/* Quick Install */}
+          {/* npm Packages */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
+            className="max-w-4xl mx-auto mb-16"
+          >
+            <div className="grid md:grid-cols-2 gap-6">
+              {npmPackages.map((pkg, i) => (
+                <a
+                  key={i}
+                  href={pkg.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="glass-panel rounded-xl p-6 border border-primary/20 hover:border-primary/40 transition-colors group"
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <Icon icon="simple-icons:npm" className="w-6 h-6 text-red-500" />
+                      <span className="font-mono font-semibold text-primary">{pkg.name}</span>
+                    </div>
+                    <span className="text-xs bg-primary/20 text-primary px-2 py-1 rounded">v{pkg.version}</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-4">{pkg.description}</p>
+                  <div className="bg-black/50 rounded-lg p-3 font-mono text-xs group-hover:bg-black/70 transition-colors">
+                    <span className="text-muted-foreground">$</span>{" "}
+                    <span className="text-green-400">{pkg.install}</span>
+                  </div>
+                </a>
+              ))}
+            </div>
+          </motion.div>
+
+          {/* Quick Install */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15 }}
             className="max-w-3xl mx-auto mb-16"
           >
             <div className="glass-panel rounded-xl p-6 border border-primary/20">
@@ -72,8 +130,8 @@ export default function CLI() {
               <div className="bg-black/50 rounded-lg p-4 font-mono text-sm">
                 <span className="text-muted-foreground">$</span>{" "}
                 <span className="text-green-400">npx</span>{" "}
-                <span className="text-cyan-400">veil-cli</span>{" "}
-                <span className="text-white">init my-privacy-app</span>
+                <span className="text-cyan-400">create-veil-app</span>{" "}
+                <span className="text-white">my-privacy-app</span>
               </div>
             </div>
           </motion.div>
@@ -113,7 +171,7 @@ export default function CLI() {
                     <div className="w-3 h-3 rounded-full bg-yellow-500/80" />
                     <div className="w-3 h-3 rounded-full bg-green-500/80" />
                   </div>
-                  <span className="text-xs text-muted-foreground ml-2">veil init</span>
+                  <span className="text-xs text-muted-foreground ml-2">npx create-veil-app</span>
                 </div>
                 <div className="p-4 bg-[#1a1a2e] font-mono text-xs leading-relaxed">
                   <pre className="text-cyan-400">{`
@@ -123,13 +181,13 @@ export default function CLI() {
 ╚██╗ ██╔╝██╔══╝  ██║██║     
  ╚████╔╝ ███████╗██║███████╗
   ╚═══╝  ╚══════╝╚═╝╚══════╝`}</pre>
-                  <p className="text-purple-400 mt-2">Veil — Privacy-first access & recovery for Solana</p>
+                  <p className="text-purple-400 mt-2">Veil + ShadowWire — Complete Privacy Infrastructure</p>
                   <div className="mt-4 space-y-1">
                     <p><span className="text-yellow-400">?</span> <span className="text-white">Project name:</span> <span className="text-green-400">my-dex</span></p>
-                    <p><span className="text-yellow-400">?</span> <span className="text-white">Frontend framework:</span> <span className="text-cyan-400">Next.js (recommended)</span></p>
-                    <p><span className="text-yellow-400">?</span> <span className="text-white">Enable ShadowPay?</span> <span className="text-green-400">Yes</span></p>
+                    <p><span className="text-yellow-400">?</span> <span className="text-white">Template:</span> <span className="text-cyan-400">DEX Interface</span></p>
+                    <p><span className="text-yellow-400">?</span> <span className="text-white">Framework:</span> <span className="text-cyan-400">Next.js</span></p>
+                    <p><span className="text-yellow-400">?</span> <span className="text-white">ShadowPay mode:</span> <span className="text-cyan-400">App — Receive payments</span></p>
                     <p><span className="text-yellow-400">?</span> <span className="text-white">Network:</span> <span className="text-cyan-400">Devnet</span></p>
-                    <p><span className="text-yellow-400">?</span> <span className="text-white">Building:</span> <span className="text-cyan-400">App — Receive payments</span></p>
                     <p className="text-green-400 mt-2">✔ Veil initialized successfully.</p>
                   </div>
                 </div>
@@ -217,6 +275,30 @@ export default function CLI() {
             </div>
           </motion.div>
 
+          {/* Templates */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.55 }}
+            className="max-w-4xl mx-auto mb-16"
+          >
+            <h2 className="text-2xl font-bold text-center mb-8">15 Production Templates</h2>
+            <div className="grid md:grid-cols-5 gap-4">
+              {templates.map((cat, i) => (
+                <div key={i} className="glass-panel rounded-xl p-4 border">
+                  <h3 className="font-semibold text-primary text-sm mb-3">{cat.category}</h3>
+                  <div className="space-y-2">
+                    {cat.items.map((item, j) => (
+                      <div key={j} className="text-xs font-mono bg-black/30 rounded px-2 py-1">
+                        {item}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+
           {/* CTA */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -233,8 +315,28 @@ export default function CLI() {
               <div className="bg-black/50 rounded-lg p-4 font-mono text-sm inline-block">
                 <span className="text-muted-foreground">$</span>{" "}
                 <span className="text-green-400">npx</span>{" "}
-                <span className="text-cyan-400">veil-cli</span>{" "}
-                <span className="text-white">init my-app</span>
+                <span className="text-cyan-400">create-veil-app</span>{" "}
+                <span className="text-white">my-app</span>
+              </div>
+              <div className="mt-4 flex justify-center gap-4">
+                <a
+                  href="https://www.npmjs.com/package/@veil-protocol/sdk"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center gap-1"
+                >
+                  <Icon icon="simple-icons:npm" className="w-4 h-4" />
+                  @veil-protocol/sdk
+                </a>
+                <a
+                  href="https://www.npmjs.com/package/create-veil-app"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center gap-1"
+                >
+                  <Icon icon="simple-icons:npm" className="w-4 h-4" />
+                  create-veil-app
+                </a>
               </div>
             </div>
           </motion.div>

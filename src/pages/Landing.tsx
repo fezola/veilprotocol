@@ -112,6 +112,39 @@ const techStack = [
   { name: "Solana", desc: "Blockchain", icon: "ph:currency-circle-dollar" }
 ];
 
+const privacyStack = [
+  {
+    layer: "Privacy Layer",
+    name: "Veil Protocol",
+    badge: "YOUR PROJECT",
+    color: "primary",
+    icon: "ph:shield-check",
+    features: ["ZK Identity", "Shielded Balances", "Social Recovery", "Private Voting", "Stealth Multisig"],
+    description: "Complete privacy primitives for Solana apps",
+    npm: "@veil-protocol/sdk"
+  },
+  {
+    layer: "Transfer Layer",
+    name: "ShadowWire",
+    badge: "EXTERNAL",
+    color: "purple-500",
+    icon: "ph:paper-plane-tilt",
+    features: ["Private SOL Transfers", "Sender Anonymity", "Confidential Amounts"],
+    description: "Private transfer protocol by Radr",
+    npm: "@radr/shadowwire"
+  },
+  {
+    layer: "Infrastructure",
+    name: "Helius",
+    badge: "SPONSOR",
+    color: "blue-500",
+    icon: "ph:cloud",
+    features: ["Enhanced RPC", "Webhooks", "DAS API", "Low Latency"],
+    description: "High-performance Solana infrastructure",
+    npm: null
+  }
+];
+
 export default function Landing() {
   return (
     <PageLayout>
@@ -440,8 +473,138 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Developer CLI Section */}
+      {/* Privacy Stack Architecture */}
       <section className="py-24 bg-card/30">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-16">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+            >
+              <span className="inline-block px-4 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
+                Architecture
+              </span>
+              <h2 className="text-4xl md:text-5xl font-bold mb-4">
+                Complete <span className="text-primary">Privacy Stack</span>
+              </h2>
+              <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+                Veil provides the privacy primitives — ShadowWire handles private transfers — Helius powers the infrastructure
+              </p>
+            </motion.div>
+          </div>
+
+          <div className="max-w-5xl mx-auto">
+            <div className="space-y-6">
+              {privacyStack.map((stack, idx) => (
+                <motion.div
+                  key={stack.name}
+                  initial={{ opacity: 0, x: idx % 2 === 0 ? -20 : 20 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: idx * 0.1 }}
+                  className={`glass-panel rounded-2xl p-6 border-l-4 ${
+                    stack.color === "primary" ? "border-l-primary" :
+                    stack.color === "purple-500" ? "border-l-purple-500" : "border-l-blue-500"
+                  }`}
+                >
+                  <div className="flex flex-col md:flex-row md:items-start gap-6">
+                    <div className="flex-shrink-0">
+                      <div className={`w-14 h-14 rounded-xl flex items-center justify-center ${
+                        stack.color === "primary" ? "bg-primary/10" :
+                        stack.color === "purple-500" ? "bg-purple-500/10" : "bg-blue-500/10"
+                      }`}>
+                        <Icon icon={stack.icon} className={`w-7 h-7 ${
+                          stack.color === "primary" ? "text-primary" :
+                          stack.color === "purple-500" ? "text-purple-500" : "text-blue-500"
+                        }`} />
+                      </div>
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex flex-wrap items-center gap-3 mb-2">
+                        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                          {stack.layer}
+                        </span>
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                          stack.badge === "YOUR PROJECT" ? "bg-primary/20 text-primary" :
+                          stack.badge === "EXTERNAL" ? "bg-purple-500/20 text-purple-400" : "bg-blue-500/20 text-blue-400"
+                        }`}>
+                          {stack.badge}
+                        </span>
+                      </div>
+                      <h3 className="text-xl font-bold mb-1">{stack.name}</h3>
+                      <p className="text-muted-foreground text-sm mb-4">{stack.description}</p>
+                      <div className="flex flex-wrap gap-2">
+                        {stack.features.map((feature) => (
+                          <span key={feature} className="text-xs bg-secondary/50 px-3 py-1 rounded-full">
+                            {feature}
+                          </span>
+                        ))}
+                      </div>
+                      {stack.npm && (
+                        <div className="mt-4 inline-flex items-center gap-2 text-xs font-mono bg-black/30 px-3 py-1.5 rounded-lg">
+                          <Icon icon="simple-icons:npm" className="w-4 h-4 text-red-500" />
+                          {stack.npm}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+
+            {/* How They Connect */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="mt-12 glass-panel rounded-2xl p-8"
+            >
+              <h3 className="text-xl font-bold mb-6 text-center">How They Work Together</h3>
+              <div className="bg-black/30 rounded-xl p-6 font-mono text-xs overflow-x-auto">
+                <pre className="text-center">{`
+┌─────────────────────────────────────────────────────────────────┐
+│                        YOUR APP                                  │
+│                   (Built with Veil CLI)                          │
+└─────────────────────────┬───────────────────────────────────────┘
+                          │
+┌─────────────────────────▼───────────────────────────────────────┐
+│  ┌─────────────────────────────────────────────────────────┐    │
+│  │  VEIL PROTOCOL (Privacy Layer)        @veil-protocol/sdk │   │
+│  │  • ZK Identity    • Shielded Balances    • Recovery      │   │
+│  │  • Private Voting • Stealth Multisig     • DEX Privacy   │   │
+│  └─────────────────────────────────────────────────────────┘    │
+│                          │                                       │
+│  ┌───────────────────────▼─────────────────────────────────┐    │
+│  │  SHADOWWIRE (Transfer Layer)          @radr/shadowwire   │   │
+│  │  • Private SOL/Token Transfers    • Sender Anonymity     │   │
+│  └─────────────────────────────────────────────────────────┘    │
+│                          │                                       │
+│  ┌───────────────────────▼─────────────────────────────────┐    │
+│  │  HELIUS (Infrastructure)                    helius.dev   │   │
+│  │  • Enhanced RPC    • Webhooks    • DAS API    • Speed    │   │
+│  └─────────────────────────────────────────────────────────┘    │
+│                          │                                       │
+└──────────────────────────┼──────────────────────────────────────┘
+                          ▼
+                   ┌──────────────┐
+                   │   SOLANA     │
+                   │  BLOCKCHAIN  │
+                   └──────────────┘
+`}</pre>
+              </div>
+              <p className="text-center text-muted-foreground text-sm mt-6">
+                <strong className="text-primary">Veil</strong> = privacy primitives we built •
+                <strong className="text-purple-400"> ShadowWire</strong> = transfer protocol we integrate •
+                <strong className="text-blue-400"> Helius</strong> = infrastructure sponsor
+              </p>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* Developer CLI Section */}
+      <section className="py-24">
         <div className="container mx-auto px-4">
           <div className="max-w-6xl mx-auto">
             <div className="grid lg:grid-cols-2 gap-12 items-center">
@@ -511,7 +674,7 @@ export default function Landing() {
                       <div className="w-3 h-3 rounded-full bg-yellow-500/80" />
                       <div className="w-3 h-3 rounded-full bg-green-500/80" />
                     </div>
-                    <span className="text-xs text-muted-foreground ml-2 font-mono">veil init my-app</span>
+                    <span className="text-xs text-muted-foreground ml-2 font-mono">npx create-veil-app my-app</span>
                   </div>
                   {/* Terminal Content */}
                   <div className="p-4 bg-[#1a1a2e] font-mono text-xs leading-relaxed">

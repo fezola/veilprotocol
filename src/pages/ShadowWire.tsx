@@ -164,25 +164,53 @@ export default function ShadowWire() {
       <main className="pt-24 pb-16">
         <div className="container mx-auto px-4 max-w-5xl">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-12">
+            {/* Clear Layer Distinction */}
+            <div className="flex justify-center gap-4 mb-8">
+              <div className="glass-panel rounded-xl px-4 py-3 border-2 border-primary">
+                <div className="text-[10px] font-bold text-primary uppercase tracking-wider mb-1">Privacy Layer</div>
+                <div className="font-bold">Veil Protocol</div>
+                <div className="text-xs text-muted-foreground">Identity, Voting, Multisig</div>
+              </div>
+              <div className="flex items-center">
+                <Icon icon="ph:arrow-right" className="w-6 h-6 text-muted-foreground" />
+              </div>
+              <div className="glass-panel rounded-xl px-4 py-3 border-2 border-purple-500">
+                <div className="text-[10px] font-bold text-purple-400 uppercase tracking-wider mb-1">Transfer Layer</div>
+                <div className="font-bold">ShadowWire</div>
+                <div className="text-xs text-muted-foreground">Private Transfers</div>
+              </div>
+            </div>
+
             <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-primary/30 to-purple-500/30 flex items-center justify-center">
               <Icon icon="ph:lightning" className="w-10 h-10 text-primary" />
             </div>
             <h1 className="text-4xl md:text-5xl font-bold mb-4">
-              Built on <span className="text-primary">ShadowWire</span>
+              Veil <span className="text-primary">+</span> ShadowWire
             </h1>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              We extended Radr's ShadowWire SDK to bring enterprise-grade privacy to Solana.
-              Here's exactly what we built and how it works.
+              <strong className="text-primary">Veil</strong> provides privacy primitives (identity, voting, multisig).
+              <strong className="text-purple-400"> ShadowWire</strong> handles private transfers.
+              Together, they form a complete privacy stack.
             </p>
             <div className="flex items-center justify-center gap-4 mt-6">
               <a
                 href="https://github.com/Radrdotfun/ShadowWire"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 text-primary hover:underline"
+                className="inline-flex items-center gap-2 text-purple-400 hover:underline"
               >
                 <Icon icon="mdi:github" className="w-5 h-5" />
-                ShadowWire Repository
+                ShadowWire (by Radr)
+              </a>
+              <span className="text-muted-foreground">•</span>
+              <a
+                href="https://www.npmjs.com/package/@veil-protocol/sdk"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 text-primary hover:underline"
+              >
+                <Icon icon="simple-icons:npm" className="w-5 h-5" />
+                @veil-protocol/sdk
               </a>
               <span className="text-muted-foreground">•</span>
               <Link to="/demo" className="inline-flex items-center gap-2 text-primary hover:underline">
@@ -192,34 +220,81 @@ export default function ShadowWire() {
             </div>
           </motion.div>
 
-          {/* What is ShadowWire */}
-          <div className="glass-panel rounded-2xl p-8 mb-8">
-            <h2 className="text-2xl font-semibold mb-6 flex items-center gap-2">
-              <Icon icon="ph:question" className="text-primary" /> What is ShadowWire?
-            </h2>
-            <p className="text-muted-foreground mb-4">
-              ShadowWire is Radr's privacy infrastructure for Solana. It provides the cryptographic primitives 
-              for zero-knowledge proofs, encrypted messaging, and stealth addresses on Solana.
-            </p>
-            <div className="grid md:grid-cols-3 gap-4">
-              {[
-                { icon: "ph:lock-key", title: "ZK Proofs", desc: "Poseidon hash-based commitments" },
-                { icon: "ph:chat-circle-dots", title: "Encrypted Messaging", desc: "End-to-end encrypted on-chain" },
-                { icon: "ph:ghost", title: "Stealth Addresses", desc: "One-time unlinkable addresses" },
-              ].map((item, i) => (
-                <div key={i} className="bg-secondary/30 rounded-xl p-4 text-center">
-                  <Icon icon={item.icon} className="w-6 h-6 text-primary mx-auto mb-2" />
-                  <h3 className="font-medium text-sm">{item.title}</h3>
-                  <p className="text-xs text-muted-foreground">{item.desc}</p>
+          {/* The Distinction */}
+          <div className="grid md:grid-cols-2 gap-6 mb-8">
+            {/* ShadowWire - External */}
+            <div className="glass-panel rounded-2xl p-6 border-2 border-purple-500/30">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 rounded-xl bg-purple-500/10 flex items-center justify-center">
+                  <Icon icon="ph:paper-plane-tilt" className="w-6 h-6 text-purple-400" />
                 </div>
-              ))}
+                <div>
+                  <div className="text-[10px] font-bold text-purple-400 uppercase tracking-wider">External Protocol</div>
+                  <h3 className="text-xl font-bold">ShadowWire</h3>
+                </div>
+              </div>
+              <p className="text-muted-foreground text-sm mb-4">
+                Built by <strong>Radr</strong>. Provides the <strong>transfer layer</strong> for private SOL/token movements.
+                We <em>integrate</em> it — we didn't build it.
+              </p>
+              <div className="space-y-2">
+                {[
+                  { icon: "ph:paper-plane-tilt", text: "Private SOL/Token Transfers" },
+                  { icon: "ph:eye-slash", text: "Sender Anonymity" },
+                  { icon: "ph:lock-key", text: "Encrypted Amounts" },
+                ].map((item, i) => (
+                  <div key={i} className="flex items-center gap-2 text-sm">
+                    <Icon icon={item.icon} className="w-4 h-4 text-purple-400" />
+                    <span>{item.text}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-4 inline-flex items-center gap-2 text-xs font-mono bg-purple-500/10 px-3 py-1.5 rounded-lg">
+                <Icon icon="simple-icons:npm" className="w-4 h-4 text-red-500" />
+                @radr/shadowwire
+              </div>
+            </div>
+
+            {/* Veil - Your Project */}
+            <div className="glass-panel rounded-2xl p-6 border-2 border-primary/30">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                  <Icon icon="ph:shield-check" className="w-6 h-6 text-primary" />
+                </div>
+                <div>
+                  <div className="text-[10px] font-bold text-primary uppercase tracking-wider">Our Project</div>
+                  <h3 className="text-xl font-bold">Veil Protocol</h3>
+                </div>
+              </div>
+              <p className="text-muted-foreground text-sm mb-4">
+                Built by <strong>us</strong>. Provides the <strong>privacy layer</strong> — everything <em>except</em> transfers.
+                This is what we're submitting for the hackathon.
+              </p>
+              <div className="space-y-2">
+                {[
+                  { icon: "ph:fingerprint", text: "ZK Identity (email → wallet)" },
+                  { icon: "ph:check-square", text: "Private Voting (commit-reveal)" },
+                  { icon: "ph:users-three", text: "Stealth Multisig (hidden signers)" },
+                  { icon: "ph:coin", text: "Private Staking (hidden amounts)" },
+                  { icon: "ph:key", text: "Social Recovery (Shamir shares)" },
+                ].map((item, i) => (
+                  <div key={i} className="flex items-center gap-2 text-sm">
+                    <Icon icon={item.icon} className="w-4 h-4 text-primary" />
+                    <span>{item.text}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-4 inline-flex items-center gap-2 text-xs font-mono bg-primary/10 px-3 py-1.5 rounded-lg">
+                <Icon icon="simple-icons:npm" className="w-4 h-4 text-red-500" />
+                @veil-protocol/sdk
+              </div>
             </div>
           </div>
 
-          {/* Key Extensions Summary */}
+          {/* What Veil Builds ON TOP of ShadowWire */}
           <div className="glass-panel rounded-2xl p-8 mb-8">
             <h2 className="text-2xl font-semibold mb-6 flex items-center gap-2">
-              <Icon icon="ph:code" className="text-primary" /> Our Key Extensions
+              <Icon icon="ph:code" className="text-primary" /> What Veil Adds (Our Extensions)
             </h2>
             <div className="grid md:grid-cols-3 gap-4">
               {[
