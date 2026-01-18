@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { useAuth } from "@/contexts/AuthContext";
+import { NetworkStatusDot } from "@/components/ui/NetworkStatusBadge";
 
 const featureItems = [
   { label: "ZK Identity", href: "/features/identity", icon: "ph:fingerprint", description: "Anonymous authentication with zero-knowledge proofs" },
@@ -61,12 +62,15 @@ export function Header() {
   return (
     <header className="fixed top-0 left-0 right-0 z-50 glass-panel border-b">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-        <Link to="/" className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center">
-            <Icon icon="ph:shield-check-fill" className="w-5 h-5 text-primary" />
-          </div>
-          <span className="font-semibold text-lg">Veil</span>
-        </Link>
+        <div className="flex items-center gap-3">
+          <Link to="/" className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center">
+              <Icon icon="ph:shield-check-fill" className="w-5 h-5 text-primary" />
+            </div>
+            <span className="font-semibold text-lg">Veil</span>
+          </Link>
+          <NetworkStatusDot className="hidden sm:flex" />
+        </div>
 
         {/* Desktop Nav */}
         <nav className="hidden md:flex items-center gap-6">

@@ -14,8 +14,9 @@ import { Icon } from "@iconify/react";
 import { Modal, DemoStep, TransactionResult, LoadingIndicator, ErrorMessage } from "../ui/Modal";
 import { generateTransactionProof } from "@/lib/zkProof";
 import { useAuth } from "@/contexts/AuthContext";
-import { sendPrivatePayment } from "@/lib/shadowpay";
+import { sendPrivatePayment, isDemoMode, getNetworkInfo } from "@/lib/shadowpay";
 import { getSolscanLink, getSolscanAccountLink } from "@/lib/veilProgram";
+import { NetworkStatusBadge } from "../ui/NetworkStatusBadge";
 
 interface ShadowPayDemoModalProps {
   isOpen: boolean;
@@ -140,9 +141,29 @@ export function ShadowPayDemoModal({ isOpen, onClose }: ShadowPayDemoModalProps)
     }
   };
 
+  const isDemo = isDemoMode();
+  const networkInfo = getNetworkInfo();
+
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="ShadowPay Private Payments Demo">
       <div className="space-y-6">
+        {/* Network Status Badge */}
+        <div className="flex justify-center">
+          <NetworkStatusBadge showDetails />
+        </div>
+
+        {isDemo && (
+          <div className="p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
+            <div className="flex items-center gap-2">
+              <Icon icon="ph:flask" className="w-4 h-4 text-yellow-500" />
+              <span className="text-sm text-yellow-500 font-medium">Demo Mode</span>
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {networkInfo.warning}
+            </p>
+          </div>
+        )}
+
         <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
           <div className="flex items-start gap-3">
             <Icon icon="ph:shield-check" className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />

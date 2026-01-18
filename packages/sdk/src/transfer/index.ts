@@ -1,27 +1,72 @@
 /**
  * Veil Private Transfer Module
- * 
+ *
  * Send SOL and tokens privately with hidden amounts and stealth addresses.
- * Integrates with ShadowPay for Pedersen commitments.
+ * Integrates with ShadowWire (@radr/shadowwire) for real private transfers on mainnet.
+ *
+ * @example
+ * ```typescript
+ * import { PrivateTransferClient } from '@veil-protocol/sdk/transfer';
+ *
+ * const client = new PrivateTransferClient(connection, encryptionKey);
+ *
+ * // Private transfer with ShadowWire (mainnet)
+ * await client.shadowWireTransfer(
+ *   recipientAddress,
+ *   1.5, // SOL - amount hidden on-chain
+ *   signMessage
+ * );
+ * ```
  */
 
-import { 
-  Connection, 
-  PublicKey, 
-  Transaction, 
-  SystemProgram, 
+import {
+  Connection,
+  PublicKey,
+  Transaction,
+  SystemProgram,
   LAMPORTS_PER_SOL,
   Keypair
 } from '@solana/web3.js';
 import { PrivateTransfer, TransferResult, ProofData, PedersenCommitment } from '../types';
-import { 
-  createPedersenCommitment, 
-  poseidonHash, 
-  bytesToBigInt, 
+import {
+  createPedersenCommitment,
+  poseidonHash,
+  bytesToBigInt,
   bytesToHex,
   sha256String,
-  randomBytes 
+  randomBytes
 } from '../crypto';
+
+// ============================================================================
+// SHADOWWIRE INTEGRATION TYPES
+// ============================================================================
+
+/**
+ * ShadowWire transfer options
+ */
+export interface ShadowWireTransferOptions {
+  /** Token to transfer (default: 'SOL') */
+  token?: string;
+  /** Transfer type: 'internal' for private, 'external' for public */
+  type?: 'internal' | 'external';
+  /** Optional memo (visible on-chain) */
+  memo?: string;
+}
+
+/**
+ * ShadowWire transfer result
+ */
+export interface ShadowWireResult {
+  success: boolean;
+  /** Transaction signature (if successful) */
+  signature?: string;
+  /** Commitment hash (amount hidden) */
+  commitment?: string;
+  /** Error message (if failed) */
+  error?: string;
+  /** Whether this was a demo/simulation */
+  isDemo?: boolean;
+}
 
 // ============================================================================
 // STEALTH ADDRESS GENERATION
@@ -165,6 +210,116 @@ export class PrivateTransferClient {
     };
   }
   
+  /**
+   * Send private transfer using ShadowWire (mainnet only)
+   *
+   * This uses the @radr/shadowwire SDK for real private transfers
+   * with Pedersen commitments that hide amounts on-chain.
+   *
+   * @param senderPublicKey - Sender's public key
+   * @param recipient - Recipient address (string or PublicKey)
+   * @param amount - Amount in SOL (will be hidden on-chain)
+   * @param signMessage - Wallet's signMessage function
+   * @param options - Optional transfer options
+   *
+   * @example
+   * ```typescript
+   * const result = await client.shadowWireTransfer(
+   *   publicKey,
+   *   'recipient-address',
+   *   1.5, // SOL - hidden on-chain
+   *   signMessage
+   * );
+   * ```
+   */
+  async shadowWireTransfer(
+    senderPublicKey: PublicKey,
+    recipient: string | PublicKey,
+    amount: number,
+    signMessage: (message: Uint8Array) => Promise<Uint8Array>,
+    options: ShadowWireTransferOptions = {}
+  ): Promise<ShadowWireResult> {
+    try {
+      // Dynamic import of ShadowWire to avoid bundling issues
+      // Users must install @radr/shadowwire separately
+      let ShadowWireClient: any;
+      try {
+        const shadowwire = await import('@radr/shadowwire');
+        ShadowWireClient = shadowwire.ShadowWireClient;
+      } catch {
+        // ShadowWire not installed - return demo result
+        console.warn('[Veil] @radr/shadowwire not installed. Using demo mode.');
+        return this.shadowWireDemo(senderPublicKey, recipient, amount);
+      }
+
+      const client = new ShadowWireClient({
+        debug: process.env.NODE_ENV === 'development',
+      });
+
+      // Generate auth message for ShadowWire API
+      const nonce = Math.random().toString(36).substring(2, 15);
+      const timestamp = Date.now();
+      const authMessage = `shadowpay:zk_transfer:${nonce}:${timestamp}`;
+      const authMessageBytes = new TextEncoder().encode(authMessage);
+
+      // Sign the auth message with wallet
+      const signature = await signMessage(authMessageBytes);
+      const signatureBase64 = btoa(String.fromCharCode(...signature));
+
+      const recipientAddress = typeof recipient === 'string'
+        ? recipient
+        : recipient.toBase58();
+
+      // Use ShadowWire for private transfer
+      const result = await client.transfer({
+        sender: senderPublicKey.toBase58(),
+        recipient: recipientAddress,
+        amount: amount,
+        token: options.token || 'SOL',
+        type: options.type || 'internal', // Private transfer - amount hidden
+        wallet: {
+          signMessage,
+          publicKey: senderPublicKey.toBase58(),
+        },
+        auth: {
+          message: authMessage,
+          signature: signatureBase64,
+          nonce,
+          timestamp,
+        },
+      });
+
+      return {
+        success: true,
+        signature: result.signature || result.txHash,
+        commitment: result.commitment,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'ShadowWire transfer failed',
+      };
+    }
+  }
+
+  /**
+   * Demo mode for ShadowWire when SDK is not installed
+   */
+  private async shadowWireDemo(
+    sender: PublicKey,
+    recipient: string | PublicKey,
+    amount: number
+  ): Promise<ShadowWireResult> {
+    // Create a simulated commitment
+    const commitment = createPedersenCommitment(BigInt(Math.floor(amount * LAMPORTS_PER_SOL)));
+
+    return {
+      success: true,
+      commitment: bytesToHex(commitment.commitment),
+      isDemo: true,
+    };
+  }
+
   private async generateTransferProof(
     sender: PublicKey,
     recipient: PublicKey,
@@ -174,7 +329,7 @@ export class PrivateTransferClient {
     const recipientHash = await poseidonHash([bytesToBigInt(recipient.toBytes())]);
     const commitmentHash = bytesToBigInt(commitment.commitment);
     const proofHash = await poseidonHash([senderHash, recipientHash, commitmentHash]);
-    
+
     return {
       proof: {
         pi_a: [proofHash.toString(), (proofHash + BigInt(1)).toString(), '1'],
@@ -197,12 +352,19 @@ export class PrivateTransferClient {
 }
 
 // ============================================================================
-// CONVENIENCE FUNCTIONS  
+// CONVENIENCE FUNCTIONS
 // ============================================================================
 
 export function createTransferClient(connection: Connection): PrivateTransferClient {
   return new PrivateTransferClient(connection);
 }
 
-export type { PrivateTransfer, TransferResult } from '../types';
+/**
+ * Create a ShadowWire-enabled transfer client
+ * Requires @radr/shadowwire to be installed for mainnet transfers
+ */
+export function createShadowWireClient(connection: Connection): PrivateTransferClient {
+  return new PrivateTransferClient(connection);
+}
 
+export type { PrivateTransfer, TransferResult } from '../types';

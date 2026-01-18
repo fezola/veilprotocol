@@ -1,6 +1,6 @@
 {
   "name": "create-veil-app",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "Privacy-first project scaffolding CLI for Solana - 15 templates with full Veil + ShadowWire stack",
   "type": "module",
   "bin": {

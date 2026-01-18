@@ -391,6 +391,9 @@ async function addVeilToProject(projectPath: string, config: VeilConfig): Promis
     generateRecoveryTs,
     generateAccessTs,
     generateGuaranteesTs,
+    generateVotingTs,
+    generateMultisigTs,
+    generateStakingTs,
     generateRpcTs,
     generateHeliusTs,
     generateVeilProvider,
@@ -409,12 +412,18 @@ async function addVeilToProject(projectPath: string, config: VeilConfig): Promis
     { path: "veil.config.ts", content: generateVeilConfig(config) },
     { path: ".env.example", content: generateEnvExample(config), append: true },
 
-    // Privacy module
+    // Privacy module - Core
     { path: "privacy/login.ts", content: generateLoginTs() },
     { path: "privacy/recovery.ts", content: generateRecoveryTs() },
     { path: "privacy/access.ts", content: generateAccessTs() },
     { path: "privacy/guarantees.ts", content: generateGuaranteesTs() },
-    { path: "privacy/index.ts", content: `export * from "./login.js";\nexport * from "./recovery.js";\nexport * from "./access.js";\nexport * from "./guarantees.js";\n` },
+
+    // Privacy module - Advanced (voting, multisig, staking)
+    { path: "privacy/voting.ts", content: generateVotingTs() },
+    { path: "privacy/multisig.ts", content: generateMultisigTs() },
+    { path: "privacy/staking.ts", content: generateStakingTs() },
+
+    { path: "privacy/index.ts", content: `export * from "./login.js";\nexport * from "./recovery.js";\nexport * from "./access.js";\nexport * from "./guarantees.js";\nexport * from "./voting.js";\nexport * from "./multisig.js";\nexport * from "./staking.js";\n` },
 
     // Infra module
     { path: "infra/rpc.ts", content: generateRpcTs() },

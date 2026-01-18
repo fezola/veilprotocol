@@ -1,8 +1,8 @@
 /**
  * @veil-protocol/sdk
- * 
+ *
  * Complete Privacy Infrastructure for Solana
- * 
+ *
  * Features:
  * - 🎭 Identity: ZK-based anonymous authentication
  * - 🛡️ Shielded: Hide wallet balances from public view
@@ -11,28 +11,40 @@
  * - 🔄 DEX: Private swaps on Jupiter/Raydium
  * - 🔑 Recovery: Privacy-preserving wallet recovery
  * - 👛 Wallet: Wallet adapter for dApp integration
- * 
+ * - 🗳️ Voting: Private commit-reveal voting for DAOs
+ * - 👥 Multisig: Stealth M-of-N signing with hidden identities
+ * - 💰 Staking: Private staking with hidden amounts
+ *
  * @example
  * ```typescript
  * import { VeilClient } from '@veil-protocol/sdk';
- * 
+ *
  * const veil = new VeilClient({ connection });
- * 
+ *
  * // Anonymous login
- * await veil.connect({ 
- *   method: 'email', 
- *   identifier: 'user@example.com', 
- *   secret: 'password' 
+ * await veil.connect({
+ *   method: 'email',
+ *   identifier: 'user@example.com',
+ *   secret: 'password'
  * });
- * 
+ *
  * // Shield your balance
  * await veil.shieldFunds(5.0); // Deposit 5 SOL privately
- * 
+ *
  * // Private transfer
  * await veil.privateTransfer(recipient, 1.0);
- * 
+ *
  * // Private swap
  * await veil.privateSwap(TOKENS.SOL, TOKENS.USDC, 1.0);
+ *
+ * // Private voting
+ * const { commitment } = await veil.voting.createVote(proposalId, VoteChoice.YES);
+ *
+ * // Stealth multisig
+ * await veil.multisig.stealthSign(proposalId, signerSecret);
+ *
+ * // Private staking
+ * await veil.staking.stake(validatorPubkey, 100);
  * ```
  */
 
@@ -48,6 +60,9 @@ export * from './shielded';
 export * from './tokens';
 export * from './dex';
 export * from './wallet-adapter';
+export * from './voting';
+export * from './multisig';
+export * from './staking';
 
 // Import for VeilClient
 import { generateIdentityProof, createIdentityCommitment, deriveWallet } from './identity';
@@ -56,6 +71,9 @@ import { createTransferClient, PrivateTransferClient } from './transfer';
 import { createTokenClient, PrivateTokenClient } from './tokens';
 import { createDexClient, PrivateDexClient, TOKENS } from './dex';
 import { createRecoveryKey, splitSecret, combineShares } from './recovery';
+import { PrivateVotingClient } from './voting';
+import { StealthMultisigClient } from './multisig';
+import { PrivateStakingClient } from './staking';
 import { IdentityInput, RecoveryConfig, ShamirShare } from './types';
 
 // ============================================================================
@@ -75,20 +93,23 @@ export class VeilClient {
   public connection: Connection;
   public publicKey: PublicKey | null = null;
   public connected: boolean = false;
-  
+
   private encryptionKey: string = '';
   private commitment: Uint8Array | null = null;
-  
+
   // Privacy modules
   public shielded: ShieldedBalanceClient | null = null;
   public transfer: PrivateTransferClient | null = null;
   public tokens: PrivateTokenClient | null = null;
   public dex: PrivateDexClient | null = null;
-  
+  public voting: PrivateVotingClient | null = null;
+  public multisig: StealthMultisigClient | null = null;
+  public staking: PrivateStakingClient | null = null;
+
   constructor(config: VeilClientConfig) {
     this.connection = config.connection;
   }
-  
+
   /**
    * Connect with anonymous identity
    */
@@ -98,18 +119,21 @@ export class VeilClient {
       if (!result.success) {
         return { success: false, error: result.error };
       }
-      
+
       this.commitment = result.commitment;
       this.publicKey = result.wallet;
       this.connected = true;
       this.encryptionKey = Buffer.from(result.commitment).toString('hex');
-      
+
       // Initialize modules
       this.shielded = createShieldedClient(this.connection, this.encryptionKey);
       this.transfer = createTransferClient(this.connection);
       this.tokens = createTokenClient(this.connection, this.encryptionKey);
       this.dex = createDexClient(this.connection);
-      
+      this.voting = new PrivateVotingClient(this.connection, this.encryptionKey);
+      this.multisig = new StealthMultisigClient(this.connection, this.encryptionKey);
+      this.staking = new PrivateStakingClient(this.connection, this.encryptionKey);
+
       return { success: true };
     } catch (error) {
       return { success: false, error: error instanceof Error ? error.message : 'Unknown' };
@@ -127,6 +151,9 @@ export class VeilClient {
     this.transfer = null;
     this.tokens = null;
     this.dex = null;
+    this.voting = null;
+    this.multisig = null;
+    this.staking = null;
   }
   
   /**

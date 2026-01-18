@@ -1,7 +1,7 @@
 {
   "name": "@veil-protocol/sdk",
-  "version": "0.1.0",
-  "description": "Complete privacy infrastructure SDK for Solana - Identity hiding, shielded balances, private transactions, and token privacy",
+  "version": "0.2.0",
+  "description": "Complete privacy infrastructure SDK for Solana - Identity, shielded balances, private voting, stealth multisig, private staking",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
@@ -45,6 +45,21 @@
       "types": "./dist/wallet-adapter/index.d.ts",
       "import": "./dist/wallet-adapter/index.mjs",
       "require": "./dist/wallet-adapter/index.js"
+    },
+    "./voting": {
+      "types": "./dist/voting/index.d.ts",
+      "import": "./dist/voting/index.mjs",
+      "require": "./dist/voting/index.js"
+    },
+    "./multisig": {
+      "types": "./dist/multisig/index.d.ts",
+      "import": "./dist/multisig/index.mjs",
+      "require": "./dist/multisig/index.js"
+    },
+    "./staking": {
+      "types": "./dist/staking/index.d.ts",
+      "import": "./dist/staking/index.mjs",
+      "require": "./dist/staking/index.js"
     }
   },
   "scripts": {

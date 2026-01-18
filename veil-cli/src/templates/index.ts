@@ -208,6 +208,7 @@ Built with [Veil](https://github.com/veil-protocol) + [ShadowWire](https://shado
 
 // Re-export from other template files
 export * from "./privacy.js";
+export * from "./privacy-modules.js";
 export * from "./infra.js";
 export * from "./project.js";
 export * from "./components.js";
