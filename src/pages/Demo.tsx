@@ -28,7 +28,7 @@ interface DemoStep {
 }
 
 export default function Demo() {
-  const { publicKey, connected, signMessage } = useWallet();
+  const { publicKey, connected, signMessage, signTransaction } = useWallet();
   const { veilWallet, commitment, isAuthenticated } = useAuth();
   const [activeDemo, setActiveDemo] = useState<DemoCategory | null>(null);
   const [currentStep, setCurrentStep] = useState(0);
@@ -626,25 +626,29 @@ export default function Demo() {
     setDemoSteps([...steps]);
 
     try {
-      // Note: This will use real ShadowPay on devnet
+      // Note: This will use real devnet transactions when signTransaction is available
       // For demo, we use a test recipient address
       const testRecipient = "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"; // Token program address as safe recipient
 
       const paymentResult = await sendPrivatePayment(
         {
           recipient: testRecipient,
-          amount: 0.1,
+          amount: 0.01, // Small amount for demo
           token: "SOL"
         },
         publicKey,
-        signMessage
+        signMessage,
+        signTransaction // Enable real devnet transactions!
       );
 
       if (paymentResult.success) {
-        steps[2].result = `Private transfer submitted to devnet`;
+        steps[2].result = paymentResult.txSignature
+          ? `Private transfer sent! Tx: ${paymentResult.txSignature.slice(0, 8)}...`
+          : `Private transfer submitted to ${paymentResult.network}`;
+        steps[2].txHash = paymentResult.txSignature;
         steps[2].status = "complete";
       } else {
-        steps[2].result = `Demo mode: ${paymentResult.message}`;
+        steps[2].result = `${paymentResult.network}: ${paymentResult.message}`;
         steps[2].status = "complete";
       }
     } catch (error) {

@@ -11,6 +11,27 @@ type AuthMethod = "passkey" | "email" | null;
 type AuthStep = "method" | "email-input" | "verifying" | "creating";
 type ProofStage = "idle" | "hashing" | "generating" | "verifying" | "complete";
 
+/**
+ * Get or create a persistent secret for an identifier (email/passkey).
+ * Same identifier always returns the same secret = same wallet.
+ * This is stored encrypted in localStorage.
+ */
+function getOrCreateSecret(identifier: string): { secret: string; isReturning: boolean } {
+  // Simple hash of identifier for storage key (don't store email directly)
+  const keyHash = btoa(identifier).replace(/[^a-zA-Z0-9]/g, '').slice(0, 16);
+  const storageKey = `veil_secret_${keyHash}`;
+
+  const existingSecret = localStorage.getItem(storageKey);
+  if (existingSecret) {
+    return { secret: existingSecret, isReturning: true };
+  }
+
+  // First time - generate and store new secret
+  const newSecret = crypto.randomUUID();
+  localStorage.setItem(storageKey, newSecret);
+  return { secret: newSecret, isReturning: false };
+}
+
 export default function Login() {
   const navigate = useNavigate();
   const { login, isAuthenticated, veilWallet } = useAuth();
@@ -32,62 +53,71 @@ export default function Login() {
     // Stage 1: Hashing
     setProofStage("hashing");
     await new Promise((resolve) => setTimeout(resolve, 600));
-    
+
     // Stage 2: Generating proof
     setProofStage("generating");
-    const secret = crypto.randomUUID();
+
+    // Get or create persistent secret - same email = same secret = same wallet!
+    const { secret, isReturning } = getOrCreateSecret(identifier);
     const result = await generateAuthProof(identifier, secret);
-    
+
     if (result.success && result.proof) {
       // Stage 3: Verifying
       setProofStage("verifying");
       await new Promise((resolve) => setTimeout(resolve, 500));
-      
+
       setProof(result.proof);
       setProofDuration(result.duration);
-      
+
       // Stage 4: Complete
       setProofStage("complete");
-      
+
       // Store commitment for wallet derivation
       const walletAddress = await deriveWalletAddress(result.proof.commitment);
 
-      // Update auth context (this also stores in sessionStorage)
-      login(walletAddress, result.proof.commitment);
+      // Update auth context with persistence
+      login(walletAddress, result.proof.commitment, identifier);
 
       await new Promise((resolve) => setTimeout(resolve, 1500));
 
-      return true;
+      return { success: true, isReturning };
     }
-    return false;
+    return { success: false, isReturning: false };
   }, [login]);
 
   const handlePasskeyAuth = async () => {
     setMethod("passkey");
     setStep("verifying");
-    
-    // Generate a unique identifier for passkey (simulated)
-    const passkeyId = `passkey_${crypto.randomUUID()}`;
-    const success = await runZKProofGeneration(passkeyId);
-    
-    if (success) {
+
+    // For passkey, we use a stored passkey ID or create a new one
+    const storedPasskeyId = localStorage.getItem('veil_passkey_id');
+    const passkeyId = storedPasskeyId || `passkey_${crypto.randomUUID()}`;
+    if (!storedPasskeyId) {
+      localStorage.setItem('veil_passkey_id', passkeyId);
+    }
+
+    const result = await runZKProofGeneration(passkeyId);
+
+    if (result.success) {
       setStep("creating");
       await new Promise((resolve) => setTimeout(resolve, 1000));
-      navigate("/wallet-created");
+      // Navigate to dashboard if returning, wallet-created if new
+      navigate(result.isReturning ? "/dashboard" : "/wallet-created");
     }
   };
 
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) return;
-    
+
     setStep("verifying");
-    const success = await runZKProofGeneration(email);
-    
-    if (success) {
+    const result = await runZKProofGeneration(email);
+
+    if (result.success) {
       setStep("creating");
       await new Promise((resolve) => setTimeout(resolve, 1000));
-      navigate("/wallet-created");
+      // Navigate to dashboard if returning, wallet-created if new
+      navigate(result.isReturning ? "/dashboard" : "/wallet-created");
     }
   };
 

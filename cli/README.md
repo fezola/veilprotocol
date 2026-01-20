@@ -17,6 +17,7 @@ veil init my-app
 ```
 
 Interactive prompts will guide you through:
+- **Network selection** (devnet for testing, mainnet for production)
 - Helius RPC integration (recommended for privacy)
 - ShadowPay integration (private transfers)
 - Template selection (Basic, Governance, Treasury, Full)
@@ -24,7 +25,17 @@ Interactive prompts will guide you through:
 ### With flags
 
 ```bash
-veil init my-app --helius --shadow-pay
+# Devnet (default - recommended for development)
+veil init my-app --network=devnet --helius --shadow-pay
+
+# Mainnet (production)
+veil init my-app --network=mainnet-beta --helius --shadow-pay
+```
+
+### Show network configuration help
+
+```bash
+veil network
 ```
 
 ### Show info
@@ -32,6 +43,38 @@ veil init my-app --helius --shadow-pay
 ```bash
 veil info
 ```
+
+## Network Configuration
+
+### Devnet (Development)
+
+- **Free SOL** from [faucet.solana.com](https://faucet.solana.com)
+- Perfect for development and testing
+- No real money involved
+- Wallet: Enable "Testnet Mode" in Phantom/Solflare
+
+### Mainnet (Production)
+
+- **Real SOL required**
+- Permanent transactions
+- Full privacy features
+- Wallet: Disable "Testnet Mode"
+
+### Switching Networks
+
+Update your `.env` file:
+
+```bash
+# Devnet (development)
+VITE_SOLANA_NETWORK=devnet
+VITE_HELIUS_RPC_URL=https://devnet.helius-rpc.com/?api-key=YOUR_KEY
+
+# Mainnet (production)
+VITE_SOLANA_NETWORK=mainnet-beta
+VITE_HELIUS_RPC_URL=https://mainnet.helius-rpc.com/?api-key=YOUR_KEY
+```
+
+Then restart your application and switch your wallet to match.
 
 ## Templates
 

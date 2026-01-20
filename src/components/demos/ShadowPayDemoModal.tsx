@@ -102,10 +102,12 @@ export function ShadowPayDemoModal({ isOpen, onClose }: ShadowPayDemoModalProps)
       setStep3Status("active");
 
       try {
+        // Pass signTransaction for real devnet transactions
         const result = await sendPrivatePayment(
           { recipient, amount, token: "SOL" },
           publicKey,
-          signMessage
+          signMessage,
+          signTransaction // Enable real devnet transactions!
         );
 
         setPaymentResult({

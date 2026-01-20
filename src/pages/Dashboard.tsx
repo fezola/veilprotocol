@@ -18,6 +18,7 @@ import {
   initializeCommitment,
   commitmentToBytes
 } from "@/lib/veilProgram";
+import { getNetworkStatus, isDevnetMode, isDemoMode } from "@/lib/shadowpay";
 
 type ProofStage = "idle" | "hashing" | "generating" | "verifying" | "complete";
 
@@ -716,7 +717,7 @@ export default function Dashboard() {
                       className="py-3 bg-success text-white font-medium rounded-lg hover:bg-success/90 transition-colors flex items-center justify-center gap-2"
                     >
                       <Icon icon="ph:paper-plane-tilt" className="w-5 h-5" />
-                      Try Demo
+                      {isDevnetMode() ? 'Try on Devnet' : isDemoMode() ? 'Try Demo' : 'Send Payment'}
                     </button>
                     <Link
                       to="/shadowpay-explained"

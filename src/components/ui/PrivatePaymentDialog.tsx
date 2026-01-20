@@ -16,6 +16,9 @@ import {
   sendPrivatePayment,
   validateRecipientAddress,
   validateAmount,
+  isDevnetMode,
+  isDemoMode as isShadowPayDemoMode,
+  getNetworkInfo,
   type PrivatePaymentResult,
 } from '@/lib/shadowpay';
 
@@ -27,13 +30,22 @@ interface PrivatePaymentDialogProps {
 type PaymentStage = 'input' | 'confirming' | 'submitting' | 'completed' | 'failed';
 
 export function PrivatePaymentDialog({ isOpen, onClose }: PrivatePaymentDialogProps) {
-  const { publicKey, signMessage, connected } = useWallet();
+  const { publicKey, signMessage, signTransaction, connected } = useWallet();
   const [stage, setStage] = useState<PaymentStage>('input');
   const [recipient, setRecipient] = useState('');
   const [amount, setAmount] = useState('');
   const [result, setResult] = useState<PrivatePaymentResult | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [demoMode, setDemoMode] = useState(false);
+  // Internal demo mode (when wallet not connected) - separate from network demo mode
+  const [internalDemoMode, setInternalDemoMode] = useState(false);
+
+  // Get actual network status
+  const networkInfo = getNetworkInfo();
+  const isDevnet = isDevnetMode();
+  const isNetworkDemoMode = isShadowPayDemoMode();
+
+  // Effective demo mode: internal demo OR network demo mode
+  const effectiveDemoMode = internalDemoMode || (isNetworkDemoMode && !connected);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,8 +64,8 @@ export function PrivatePaymentDialog({ isOpen, onClose }: PrivatePaymentDialogPr
       return;
     }
 
-    // Only check wallet connection if NOT in demo mode
-    if (!demoMode && (!publicKey || !signMessage)) {
+    // Only check wallet connection if NOT in internal demo mode
+    if (!internalDemoMode && (!publicKey || !signMessage)) {
       setError('Wallet not connected');
       return;
     }
@@ -68,8 +80,9 @@ export function PrivatePaymentDialog({ isOpen, onClose }: PrivatePaymentDialogPr
 
     try {
       // Demo mode simulation (for judges/testing without wallet)
-      // Check demo mode FIRST before any SDK calls
-      if (demoMode) {
+      // Check internal demo mode FIRST before any SDK calls
+      // (when user chose demo without wallet, not network demo mode)
+      if (internalDemoMode) {
         // Simulate processing delay
         await new Promise((resolve) => setTimeout(resolve, 2000));
 
@@ -99,7 +112,8 @@ export function PrivatePaymentDialog({ isOpen, onClose }: PrivatePaymentDialogPr
           token: 'SOL',
         },
         publicKey,
-        signMessage
+        signMessage,
+        signTransaction // Enable real devnet transactions!
       );
 
       setResult(paymentResult);
@@ -122,6 +136,7 @@ export function PrivatePaymentDialog({ isOpen, onClose }: PrivatePaymentDialogPr
     setAmount('');
     setResult(null);
     setError(null);
+    setInternalDemoMode(false);
   };
 
   const handleClose = () => {
@@ -178,21 +193,34 @@ export function PrivatePaymentDialog({ isOpen, onClose }: PrivatePaymentDialogPr
               </div>
             </div>
 
-            {connected && !demoMode && (
-              <div className="p-3 rounded-lg bg-warning/5 border border-warning/10">
+            {connected && isDevnet && (
+              <div className="p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
                 <div className="flex items-start gap-2">
-                  <Icon icon="ph:coins" className="w-4 h-4 text-warning mt-0.5 flex-shrink-0" />
+                  <Icon icon="ph:warning" className="w-4 h-4 text-yellow-500 mt-0.5 flex-shrink-0" />
                   <div className="text-xs text-muted-foreground">
-                    <strong className="text-warning">Devnet Mode:</strong> This uses Solana devnet.
+                    <strong className="text-yellow-500">Devnet Testing:</strong> Amounts are visible on-chain.
+                    ShadowWire privacy features require <strong>mainnet</strong>.
                     Get free devnet SOL from{' '}
                     <a
                       href="https://faucet.solana.com"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-warning underline"
+                      className="text-yellow-500 underline"
                     >
                       faucet.solana.com
                     </a>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {connected && !isDevnet && (
+              <div className="p-3 rounded-lg bg-success/10 border border-success/20">
+                <div className="flex items-start gap-2">
+                  <Icon icon="ph:shield-check" className="w-4 h-4 text-success mt-0.5 flex-shrink-0" />
+                  <div className="text-xs text-muted-foreground">
+                    <strong className="text-success">Mainnet - Full Privacy:</strong> Amounts hidden via Pedersen commitments.
+                    ShadowWire active.
                   </div>
                 </div>
               </div>
@@ -212,10 +240,17 @@ export function PrivatePaymentDialog({ isOpen, onClose }: PrivatePaymentDialogPr
                 </div>
               </summary>
               <div className="mt-3 p-4 rounded-lg bg-secondary/30 border border-border space-y-3">
+                {isDevnet && (
+                  <div className="p-2 rounded bg-yellow-500/10 border border-yellow-500/20">
+                    <p className="text-xs text-yellow-600">
+                      <strong>⚠️ Devnet:</strong> Privacy features require mainnet. On devnet, amounts are visible for testing purposes.
+                    </p>
+                  </div>
+                )}
                 <div>
                   <h4 className="text-xs font-semibold mb-1 flex items-center gap-2">
                     <Icon icon="ph:lock" className="w-3 h-3 text-success" />
-                    Pedersen Commitments
+                    Pedersen Commitments {isDevnet && <span className="text-yellow-500">(Mainnet only)</span>}
                   </h4>
                   <p className="text-xs text-muted-foreground">
                     Your payment amount is cryptographically hidden using Pedersen commitments
@@ -225,7 +260,7 @@ export function PrivatePaymentDialog({ isOpen, onClose }: PrivatePaymentDialogPr
                 <div>
                   <h4 className="text-xs font-semibold mb-1 flex items-center gap-2">
                     <Icon icon="ph:shield-check" className="w-3 h-3 text-primary" />
-                    Range Proofs (Bulletproofs)
+                    Range Proofs (Bulletproofs) {isDevnet && <span className="text-yellow-500">(Mainnet only)</span>}
                   </h4>
                   <p className="text-xs text-muted-foreground">
                     Zero-knowledge proofs verify the amount is valid (non-negative, within range)
@@ -254,40 +289,57 @@ export function PrivatePaymentDialog({ isOpen, onClose }: PrivatePaymentDialogPr
             </details>
           </div>
 
-          {/* Demo Mode Notice (when wallet not connected) */}
-          {!connected && !demoMode && (
-            <div className="mb-6 p-4 rounded-lg bg-success/10 border border-success/20">
-              <div className="flex items-start gap-3 mb-3">
-                <Icon icon="ph:play-circle" className="w-5 h-5 text-success flex-shrink-0 mt-0.5" />
-                <div>
-                  <h3 className="font-semibold text-sm mb-1">Demo Mode Available</h3>
-                  <p className="text-xs text-muted-foreground">
-                    Try the ShadowPay flow without connecting a wallet (for hackathon judges)
-                  </p>
+          {/* Wallet Not Connected - Prompt to connect or use demo */}
+          {!connected && !internalDemoMode && (
+            <div className="mb-6 space-y-4">
+              {/* Primary: Connect Wallet for Real Transactions */}
+              <div className="p-4 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                <div className="flex items-start gap-3 mb-3">
+                  <Icon icon="ph:wallet" className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <h3 className="font-semibold text-sm mb-1 text-blue-500">Connect Wallet for Real Transactions</h3>
+                    <p className="text-xs text-muted-foreground">
+                      Connect your wallet to send real private payments on Solana {isDevnet ? 'devnet' : 'mainnet'}.
+                      {isDevnet && ' Get free devnet SOL from faucet.solana.com'}
+                    </p>
+                  </div>
                 </div>
               </div>
-              <button
-                onClick={() => setDemoMode(true)}
-                className="w-full py-2.5 bg-success text-white font-medium rounded-lg hover:bg-success/90 transition-colors flex items-center justify-center gap-2"
-              >
-                <Icon icon="ph:play-circle" className="w-5 h-5" />
-                Try Demo Mode
-              </button>
+
+              {/* Secondary: Demo Mode */}
+              <div className="p-4 rounded-lg bg-secondary/50 border border-border">
+                <div className="flex items-start gap-3 mb-3">
+                  <Icon icon="ph:flask" className="w-5 h-5 text-muted-foreground flex-shrink-0 mt-0.5" />
+                  <div>
+                    <h3 className="font-semibold text-sm mb-1">Or Try Demo Mode</h3>
+                    <p className="text-xs text-muted-foreground">
+                      Test the ShadowPay flow without connecting a wallet (simulated)
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setInternalDemoMode(true)}
+                  className="w-full py-2.5 bg-secondary text-foreground font-medium rounded-lg hover:bg-secondary/80 transition-colors flex items-center justify-center gap-2 border border-border"
+                >
+                  <Icon icon="ph:flask" className="w-5 h-5" />
+                  Try Demo Mode (Simulated)
+                </button>
+              </div>
             </div>
           )}
 
-          {/* Demo Mode Badge */}
-          {demoMode && !connected && (
-            <div className="mb-6 p-3 rounded-lg bg-success/10 border border-success/20">
-              <p className="text-xs text-success flex items-center gap-2">
-                <Icon icon="ph:play-circle" className="w-4 h-4" />
+          {/* Demo Mode Badge (internal demo without wallet) */}
+          {internalDemoMode && !connected && (
+            <div className="mb-6 p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
+              <p className="text-xs text-yellow-500 flex items-center gap-2">
+                <Icon icon="ph:flask" className="w-4 h-4" />
                 <strong>Demo Mode Active:</strong> Payment will be simulated (no real transaction)
               </p>
             </div>
           )}
 
           {/* Input Stage */}
-          {stage === 'input' && (connected || demoMode) && (
+          {stage === 'input' && (connected || internalDemoMode) && (
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium mb-2">
@@ -297,11 +349,11 @@ export function PrivatePaymentDialog({ isOpen, onClose }: PrivatePaymentDialogPr
                   type="text"
                   value={recipient}
                   onChange={(e) => setRecipient(e.target.value)}
-                  placeholder={demoMode ? "Any valid Solana address (demo)" : "Enter Solana address"}
+                  placeholder={internalDemoMode ? "Any valid Solana address (demo)" : "Enter Solana address"}
                   className="w-full px-4 py-3 rounded-lg border border-border bg-background focus:outline-none focus:border-primary transition-colors font-mono text-sm"
                   required
                 />
-                {demoMode && (
+                {internalDemoMode && (
                   <p className="text-xs text-muted-foreground mt-1">
                     Demo mode: Try <code className="text-xs bg-secondary px-1 rounded">11111111111111111111111111111111</code> or any valid address
                   </p>
@@ -409,41 +461,85 @@ export function PrivatePaymentDialog({ isOpen, onClose }: PrivatePaymentDialogPr
                 <Icon icon="ph:check-circle" className="w-8 h-8 text-success" />
               </div>
               <h3 className="font-semibold mb-2">
-                {demoMode ? 'Demo Payment Completed' : 'Private Payment Completed'}
+                {internalDemoMode ? 'Demo Payment Completed' : isDevnet ? 'Devnet Payment Completed' : 'Private Payment Completed'}
               </h3>
               <p className="text-sm text-muted-foreground mb-6">
                 {result?.message || 'Transfer completed with privacy guarantees'}
               </p>
 
-              {demoMode && (
-                <div className="mb-6 p-3 rounded-lg bg-primary/10 border border-primary/20">
-                  <p className="text-xs text-primary flex items-center gap-2 justify-center">
-                    <Icon icon="ph:info" className="w-4 h-4" />
-                    This was a simulated demo. In production, ShadowPay would execute the real private transfer.
+              {/* Show tx signature link for real transactions */}
+              {result?.txSignature && (
+                <div className="mb-6 p-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                  <p className="text-xs text-blue-500 flex items-center gap-2 justify-center">
+                    <Icon icon="ph:link" className="w-4 h-4" />
+                    <a
+                      href={`https://solscan.io/tx/${result.txSignature}?cluster=devnet`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="underline"
+                    >
+                      View on Solscan (Devnet)
+                    </a>
                   </p>
                 </div>
               )}
 
-              <div className="mb-6 p-4 rounded-lg bg-success/5 border border-success/20 text-left">
-                <h4 className="text-xs font-semibold text-success mb-2 flex items-center gap-2">
-                  <Icon icon="ph:shield-check" className="w-4 h-4" />
-                  Privacy Preserved {demoMode && '(Demo)'}
-                </h4>
-                <ul className="space-y-1.5 text-xs text-muted-foreground">
-                  <li className="flex items-center gap-2">
-                    <Icon icon="ph:check" className="w-3 h-3 text-success" />
-                    Amount hidden on-chain
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Icon icon="ph:check" className="w-3 h-3 text-success" />
-                    Identity not leaked
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Icon icon="ph:check" className="w-3 h-3 text-success" />
-                    No wallet linkage exposed
-                  </li>
-                </ul>
-              </div>
+              {internalDemoMode && (
+                <div className="mb-6 p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
+                  <p className="text-xs text-yellow-500 flex items-center gap-2 justify-center">
+                    <Icon icon="ph:flask" className="w-4 h-4" />
+                    This was a simulated demo. Connect wallet for real transactions.
+                  </p>
+                </div>
+              )}
+
+              {/* Devnet - Show honest message about privacy limitations */}
+              {!internalDemoMode && isDevnet && (
+                <div className="mb-6 p-4 rounded-lg bg-yellow-500/5 border border-yellow-500/20 text-left">
+                  <h4 className="text-xs font-semibold text-yellow-600 mb-2 flex items-center gap-2">
+                    <Icon icon="ph:warning" className="w-4 h-4" />
+                    Devnet Testing Mode
+                  </h4>
+                  <ul className="space-y-1.5 text-xs text-muted-foreground">
+                    <li className="flex items-center gap-2">
+                      <Icon icon="ph:x" className="w-3 h-3 text-yellow-500" />
+                      Amount visible on Solscan (devnet limitation)
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <Icon icon="ph:check" className="w-3 h-3 text-success" />
+                      Transaction flow validated
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <Icon icon="ph:arrow-right" className="w-3 h-3 text-blue-500" />
+                      Switch to mainnet for full privacy
+                    </li>
+                  </ul>
+                </div>
+              )}
+
+              {/* Mainnet - Full privacy */}
+              {!internalDemoMode && !isDevnet && (
+                <div className="mb-6 p-4 rounded-lg bg-success/5 border border-success/20 text-left">
+                  <h4 className="text-xs font-semibold text-success mb-2 flex items-center gap-2">
+                    <Icon icon="ph:shield-check" className="w-4 h-4" />
+                    Privacy Preserved (Mainnet)
+                  </h4>
+                  <ul className="space-y-1.5 text-xs text-muted-foreground">
+                    <li className="flex items-center gap-2">
+                      <Icon icon="ph:check" className="w-3 h-3 text-success" />
+                      Amount hidden via Pedersen commitment
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <Icon icon="ph:check" className="w-3 h-3 text-success" />
+                      Identity protected
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <Icon icon="ph:check" className="w-3 h-3 text-success" />
+                      ShadowWire encryption active
+                    </li>
+                  </ul>
+                </div>
+              )}
 
               <button
                 onClick={handleClose}

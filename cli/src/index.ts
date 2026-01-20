@@ -20,7 +20,8 @@ program
   .description('Initialize a new Veil Protocol project')
   .option('--helius', 'Enable Helius RPC integration (recommended for privacy)')
   .option('--shadow-pay', 'Enable ShadowPay integration for private transfers')
-  .action(async (projectName: string | undefined, options: { helius?: boolean; shadowPay?: boolean }) => {
+  .option('--network <network>', 'Solana network: devnet or mainnet-beta', 'devnet')
+  .action(async (projectName: string | undefined, options: { helius?: boolean; shadowPay?: boolean; network?: string }) => {
     console.log(chalk.cyan('\n🛡️  Veil Protocol - Privacy-First Solana Development\n'));
 
     // Interactive prompts if not provided
@@ -31,6 +32,17 @@ program
         message: 'Project name:',
         default: projectName || 'my-veil-app',
         when: !projectName,
+      },
+      {
+        type: 'list',
+        name: 'network',
+        message: 'Select Solana network:',
+        choices: [
+          { name: 'Devnet (development/testing - free SOL from faucet)', value: 'devnet' },
+          { name: 'Mainnet-beta (production - real SOL required)', value: 'mainnet-beta' },
+        ],
+        default: 'devnet',
+        when: !options.network,
       },
       {
         type: 'confirm',
@@ -60,6 +72,7 @@ program
     ]);
 
     const finalName = projectName || answers.projectName;
+    const network = options.network ?? answers.network ?? 'devnet';
     const useHelius = options.helius ?? answers.useHelius;
     const useShadowPay = options.shadowPay ?? answers.useShadowPay;
     const template = answers.template;
@@ -89,6 +102,16 @@ program
 
       spinner.succeed(chalk.green('Project created successfully!'));
 
+      // Show network configuration
+      const isDevnet = network === 'devnet';
+      console.log(chalk.cyan('\n🌐 Network Configuration:'));
+      console.log(chalk.white(`   Network: ${isDevnet ? chalk.blue('Devnet (Development)') : chalk.green('Mainnet-beta (Production)')}`));
+      if (isDevnet) {
+        console.log(chalk.gray('   Get free devnet SOL: https://faucet.solana.com'));
+      } else {
+        console.log(chalk.yellow('   ⚠️  Mainnet uses real SOL - test on devnet first!'));
+      }
+
       console.log(chalk.cyan('\n📁 Project structure:'));
       console.log(`   ${finalName}/`);
       console.log('   ├── veil.config.ts      # Veil configuration');
@@ -104,6 +127,18 @@ program
 
       if (useHelius) {
         console.log(chalk.yellow('\n⚠️  Remember to set HELIUS_API_KEY in your .env file'));
+        console.log(chalk.gray(`   RPC URL: https://${isDevnet ? 'devnet' : 'mainnet'}.helius-rpc.com/?api-key=YOUR_KEY`));
+      }
+
+      // Show switching networks info
+      console.log(chalk.cyan('\n🔄 Switching Networks:'));
+      if (isDevnet) {
+        console.log(chalk.gray('   When ready for production, update .env:'));
+        console.log(chalk.gray('   VITE_SOLANA_NETWORK=mainnet-beta'));
+        console.log(chalk.gray('   See docs/NETWORK_CONFIGURATION.md for full guide'));
+      } else {
+        console.log(chalk.gray('   For testing, switch to devnet in .env:'));
+        console.log(chalk.gray('   VITE_SOLANA_NETWORK=devnet'));
       }
 
     } catch (error) {
@@ -128,6 +163,48 @@ program
     console.log(chalk.yellow('  ✗ Anonymize Solana base layer'));
     console.log(chalk.yellow('  ✗ Replace existing wallets'));
     console.log(chalk.gray('\nLearn more: https://github.com/veil-protocol/aegis-shield'));
+  });
+
+program
+  .command('network')
+  .description('Show network configuration help')
+  .action(() => {
+    console.log(chalk.cyan('\n🌐 Veil Protocol - Network Configuration\n'));
+
+    console.log(chalk.white('Available Networks:\n'));
+    console.log(chalk.blue('  Devnet') + chalk.gray(' (Development/Testing)'));
+    console.log(chalk.gray('    • Free SOL from faucet.solana.com'));
+    console.log(chalk.gray('    • Perfect for development and hackathons'));
+    console.log(chalk.gray('    • Data may be reset periodically'));
+    console.log(chalk.gray('    • RPC: https://api.devnet.solana.com\n'));
+
+    console.log(chalk.green('  Mainnet-beta') + chalk.gray(' (Production)'));
+    console.log(chalk.gray('    • Real SOL required'));
+    console.log(chalk.gray('    • Permanent transactions'));
+    console.log(chalk.gray('    • Full privacy features'));
+    console.log(chalk.gray('    • RPC: https://api.mainnet-beta.solana.com\n'));
+
+    console.log(chalk.white('Configuration (.env):\n'));
+    console.log(chalk.gray('  # For Devnet'));
+    console.log(chalk.cyan('  VITE_SOLANA_NETWORK=devnet'));
+    console.log(chalk.cyan('  VITE_HELIUS_RPC_URL=https://devnet.helius-rpc.com/?api-key=KEY\n'));
+
+    console.log(chalk.gray('  # For Mainnet'));
+    console.log(chalk.green('  VITE_SOLANA_NETWORK=mainnet-beta'));
+    console.log(chalk.green('  VITE_HELIUS_RPC_URL=https://mainnet.helius-rpc.com/?api-key=KEY\n'));
+
+    console.log(chalk.white('Wallet Setup:\n'));
+    console.log(chalk.gray('  Phantom: Settings → Developer Settings → Testnet Mode'));
+    console.log(chalk.gray('  Solflare: Settings → Network → Select network\n'));
+
+    console.log(chalk.white('Switching to Production:\n'));
+    console.log(chalk.gray('  1. Update VITE_SOLANA_NETWORK=mainnet-beta'));
+    console.log(chalk.gray('  2. Update Helius RPC to mainnet endpoint'));
+    console.log(chalk.gray('  3. Switch wallet to Mainnet'));
+    console.log(chalk.gray('  4. Fund wallet with real SOL'));
+    console.log(chalk.gray('  5. Restart application\n'));
+
+    console.log(chalk.gray('Full documentation: docs/NETWORK_CONFIGURATION.md'));
   });
 
 program.parse();

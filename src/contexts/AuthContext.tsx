@@ -5,7 +5,8 @@ interface AuthContextType {
   isAuthenticated: boolean;
   veilWallet: string | null;
   commitment: string | null;
-  login: (wallet: string, commitment: string) => void;
+  identifier: string | null;
+  login: (wallet: string, commitment: string, identifier?: string) => void;
   logout: () => void;
 }
 
@@ -16,15 +17,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [veilWallet, setVeilWallet] = useState<string | null>(null);
   const [commitment, setCommitment] = useState<string | null>(null);
+  const [identifier, setIdentifier] = useState<string | null>(null);
 
-  // Load from sessionStorage on mount
+  // Load from localStorage on mount (persists across browser sessions!)
   useEffect(() => {
-    const savedWallet = sessionStorage.getItem('veil_wallet');
-    const savedCommitment = sessionStorage.getItem('veil_commitment');
+    const savedWallet = localStorage.getItem('veil_wallet');
+    const savedCommitment = localStorage.getItem('veil_commitment');
+    const savedIdentifier = localStorage.getItem('veil_identifier');
 
     if (savedWallet && savedCommitment) {
       setVeilWallet(savedWallet);
       setCommitment(savedCommitment);
+      setIdentifier(savedIdentifier);
       setIsAuthenticated(true);
     }
   }, []);
@@ -37,28 +41,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [connected, publicKey, veilWallet]);
 
-  const login = (wallet: string, commitmentHash: string) => {
+  const login = (wallet: string, commitmentHash: string, userIdentifier?: string) => {
     setVeilWallet(wallet);
     setCommitment(commitmentHash);
+    setIdentifier(userIdentifier || null);
     setIsAuthenticated(true);
 
-    // Persist to sessionStorage
-    sessionStorage.setItem('veil_wallet', wallet);
-    sessionStorage.setItem('veil_commitment', commitmentHash);
+    // Persist to localStorage (survives browser close!)
+    localStorage.setItem('veil_wallet', wallet);
+    localStorage.setItem('veil_commitment', commitmentHash);
+    if (userIdentifier) {
+      localStorage.setItem('veil_identifier', userIdentifier);
+    }
   };
 
   const logout = () => {
     setVeilWallet(null);
     setCommitment(null);
+    setIdentifier(null);
     setIsAuthenticated(false);
 
-    // Clear sessionStorage
-    sessionStorage.removeItem('veil_wallet');
-    sessionStorage.removeItem('veil_commitment');
+    // Clear localStorage
+    localStorage.removeItem('veil_wallet');
+    localStorage.removeItem('veil_commitment');
+    localStorage.removeItem('veil_identifier');
+    // Note: We keep the secret so they can log back in with same email
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, veilWallet, commitment, login, logout }}>
+    <AuthContext.Provider value={{ isAuthenticated, veilWallet, commitment, identifier, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

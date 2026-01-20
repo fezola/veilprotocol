@@ -46,6 +46,120 @@ Aegis Shield is **security infrastructure**, not a privacy coin. We protect the 
 
 ---
 
+## Network Configuration (Devnet ↔ Mainnet)
+
+Aegis Shield supports both **Solana Devnet** (for development/testing) and **Mainnet-beta** (for production).
+
+### Quick Reference
+
+| Environment | When to Use | SOL Cost | ShadowPay Privacy |
+|-------------|-------------|----------|-------------------|
+| **Devnet** | Development, testing, hackathons | Free (faucet) | ⚠️ Amounts visible |
+| **Mainnet** | Production, real transactions | Real SOL | ✅ Full amount hiding |
+
+> **Important:** ShadowWire's privacy features (Pedersen commitments, amount hiding) only work on **mainnet**. Devnet is for testing the transaction flow - amounts will be visible on Solscan.
+
+### For Developers: Configure Your Network
+
+**Step 1: Set Environment Variables**
+
+```bash
+# .env file
+
+# === DEVNET (Development/Testing) ===
+VITE_SOLANA_NETWORK=devnet
+VITE_HELIUS_RPC_URL=https://devnet.helius-rpc.com/?api-key=YOUR_KEY
+
+# === MAINNET (Production) ===
+# VITE_SOLANA_NETWORK=mainnet-beta
+# VITE_HELIUS_RPC_URL=https://mainnet.helius-rpc.com/?api-key=YOUR_KEY
+```
+
+**Step 2: Get Free Devnet SOL**
+
+```bash
+# Using Solana CLI
+solana airdrop 2 --url devnet
+
+# Or visit: https://faucet.solana.com
+```
+
+**Step 3: Configure Your Wallet**
+
+1. Open Phantom/Solflare wallet
+2. Go to Settings → Developer Settings
+3. Enable "Testnet Mode" or change network to "Devnet"
+4. Your wallet address stays the same, but uses devnet SOL
+
+### Moving from Devnet to Mainnet
+
+When you're ready for production:
+
+```bash
+# 1. Update .env
+VITE_SOLANA_NETWORK=mainnet-beta
+VITE_HELIUS_RPC_URL=https://mainnet.helius-rpc.com/?api-key=YOUR_KEY
+
+# 2. Restart your application
+npm run dev
+
+# 3. Switch wallet to Mainnet
+# (Phantom: Settings → Developer Settings → Testnet Mode OFF)
+```
+
+### CLI: Specify Network During Init
+
+```bash
+# Create devnet project (default)
+veil init my-app --network=devnet
+
+# Create mainnet project
+veil init my-app --network=mainnet-beta
+```
+
+### SDK: Network Configuration
+
+```typescript
+import { VeilAuth } from '@veil-protocol/sdk';
+
+// Devnet (development)
+const veilDev = new VeilAuth({
+  network: 'devnet',
+  rpcUrl: 'https://devnet.helius-rpc.com/?api-key=YOUR_KEY'
+});
+
+// Mainnet (production)
+const veilProd = new VeilAuth({
+  network: 'mainnet-beta',
+  rpcUrl: 'https://mainnet.helius-rpc.com/?api-key=YOUR_KEY'
+});
+```
+
+### veil.config.ts
+
+```typescript
+export default defineVeilConfig({
+  project: {
+    name: "my-app",
+    network: "devnet",  // Change to "mainnet-beta" for production
+  },
+  // ... rest of config
+});
+```
+
+### Checklist: Going to Production
+
+- [ ] Update `VITE_SOLANA_NETWORK=mainnet-beta` in `.env`
+- [ ] Update Helius RPC to mainnet endpoint
+- [ ] Switch wallet from Devnet to Mainnet
+- [ ] Fund wallet with real SOL
+- [ ] Test all transactions with small amounts first
+- [ ] Update any hardcoded program IDs if needed
+
+> ⚠️ **Important:** Devnet and Mainnet are completely separate networks. Devnet SOL has no value and cannot be used on Mainnet.
+
+---
+
 ## Features
 
 ### 🔐 Private Identity (ZK Auth)
