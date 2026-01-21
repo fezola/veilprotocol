@@ -147,18 +147,51 @@ export async function generateTransactionProof(
   amount?: number
 ): Promise<ProofGenerationResult> {
   const startTime = performance.now();
-  
+
   try {
     // Create action hash
     const actionBytes = new TextEncoder().encode(action);
     const actionHash = await poseidonHash([
       BigInt("0x" + Array.from(actionBytes).map(b => b.toString(16).padStart(2, '0')).join(''))
     ]);
-    
-    const walletHash = await poseidonHash([BigInt("0x" + walletCommitment)]);
-    
+
+    // Safely parse wallet commitment - handle any string format
+    // The commitment could be hex, decimal, or any string - we hash it to get a consistent BigInt
+    let walletBigInt: bigint;
+    try {
+      // First try to parse as hex (remove 0x prefix if present)
+      const cleanHex = walletCommitment.replace(/^0x/, '');
+      // Only use hex parsing if it's valid hex
+      if (/^[0-9a-fA-F]+$/.test(cleanHex) && cleanHex.length > 0) {
+        // Truncate to 40 chars to avoid overflow
+        const truncatedHex = cleanHex.slice(0, 40);
+        walletBigInt = BigInt("0x" + truncatedHex);
+      } else {
+        // Not valid hex - hash the string to get a BigInt
+        const commitmentBytes = new TextEncoder().encode(walletCommitment);
+        const hashBuffer = await crypto.subtle.digest('SHA-256', commitmentBytes);
+        const hashArray = new Uint8Array(hashBuffer);
+        walletBigInt = BigInt(0);
+        for (let i = 0; i < 20; i++) { // Use first 20 bytes (160 bits)
+          walletBigInt = (walletBigInt << BigInt(8)) | BigInt(hashArray[i]);
+        }
+      }
+    } catch {
+      // Fallback: hash the commitment string
+      const commitmentBytes = new TextEncoder().encode(walletCommitment || 'default');
+      const hashBuffer = await crypto.subtle.digest('SHA-256', commitmentBytes);
+      const hashArray = new Uint8Array(hashBuffer);
+      walletBigInt = BigInt(0);
+      for (let i = 0; i < 20; i++) {
+        walletBigInt = (walletBigInt << BigInt(8)) | BigInt(hashArray[i]);
+      }
+    }
+    const walletHash = await poseidonHash([walletBigInt]);
+
     // Generate transaction commitment
-    const amountBigInt = BigInt(amount || 0);
+    // Convert amount to lamports (integer) - 1 SOL = 1e9 lamports
+    const amountLamports = Math.floor((amount || 0) * 1e9);
+    const amountBigInt = BigInt(amountLamports);
     const txCommitment = await poseidonHash([walletHash, actionHash, amountBigInt]);
     
     // Generate nullifier for this specific transaction

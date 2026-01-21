@@ -90,7 +90,7 @@ export function ShadowPayDemoModal({ isOpen, onClose }: ShadowPayDemoModalProps)
       );
 
       if (!rangeProofResult.success || !rangeProofResult.proof) {
-        throw new Error("Failed to generate range proof");
+        throw new Error(rangeProofResult.error || "Failed to generate range proof");
       }
 
       setRangeProof(rangeProofResult.proof);
