@@ -63,6 +63,8 @@ export * from './wallet-adapter';
 export * from './voting';
 export * from './multisig';
 export * from './staking';
+export * from './shadowwire';
+export * from './compression';
 
 // Import for VeilClient
 import { generateIdentityProof, createIdentityCommitment, deriveWallet } from './identity';
@@ -74,6 +76,8 @@ import { createRecoveryKey, splitSecret, combineShares } from './recovery';
 import { PrivateVotingClient } from './voting';
 import { StealthMultisigClient } from './multisig';
 import { PrivateStakingClient } from './staking';
+import { ShadowWireIntegration, USD1PrivateClient } from './shadowwire';
+import { CompressedAccountClient, CompressedTokenClient, CompressedShieldedPool } from './compression';
 import { IdentityInput, RecoveryConfig, ShamirShare } from './types';
 
 // ============================================================================
@@ -88,6 +92,12 @@ export interface VeilClientConfig {
 /**
  * Main Veil Protocol client
  * Unified interface for all privacy features
+ *
+ * Includes:
+ * - Core privacy: shielded, transfer, tokens, dex
+ * - DAO privacy: voting, multisig, staking
+ * - ShadowWire integration: private transfers, USD1
+ * - Light Protocol: ZK compression
  */
 export class VeilClient {
   public connection: Connection;
@@ -97,14 +107,25 @@ export class VeilClient {
   private encryptionKey: string = '';
   private commitment: Uint8Array | null = null;
 
-  // Privacy modules
+  // Core privacy modules
   public shielded: ShieldedBalanceClient | null = null;
   public transfer: PrivateTransferClient | null = null;
   public tokens: PrivateTokenClient | null = null;
   public dex: PrivateDexClient | null = null;
+
+  // DAO privacy modules
   public voting: PrivateVotingClient | null = null;
   public multisig: StealthMultisigClient | null = null;
   public staking: PrivateStakingClient | null = null;
+
+  // ShadowWire integration (RADR)
+  public shadowWire: ShadowWireIntegration | null = null;
+  public usd1: USD1PrivateClient | null = null;
+
+  // Light Protocol compression
+  public compressed: CompressedAccountClient | null = null;
+  public compressedTokens: CompressedTokenClient | null = null;
+  public compressedPool: CompressedShieldedPool | null = null;
 
   constructor(config: VeilClientConfig) {
     this.connection = config.connection;
@@ -125,14 +146,27 @@ export class VeilClient {
       this.connected = true;
       this.encryptionKey = Buffer.from(result.commitment).toString('hex');
 
-      // Initialize modules
+      // Initialize core privacy modules
       this.shielded = createShieldedClient(this.connection, this.encryptionKey);
       this.transfer = createTransferClient(this.connection);
       this.tokens = createTokenClient(this.connection, this.encryptionKey);
       this.dex = createDexClient(this.connection);
+
+      // Initialize DAO privacy modules
       this.voting = new PrivateVotingClient(this.connection, this.encryptionKey);
       this.multisig = new StealthMultisigClient(this.connection, this.encryptionKey);
       this.staking = new PrivateStakingClient(this.connection, this.encryptionKey);
+
+      // Initialize ShadowWire integration
+      const shadowWireConfig = { connection: this.connection, encryptionKey: this.encryptionKey };
+      this.shadowWire = new ShadowWireIntegration(shadowWireConfig);
+      this.usd1 = new USD1PrivateClient(shadowWireConfig);
+
+      // Initialize Light Protocol compression
+      const compressionConfig = { connection: this.connection, encryptionKey: this.encryptionKey };
+      this.compressed = new CompressedAccountClient(compressionConfig);
+      this.compressedTokens = new CompressedTokenClient(compressionConfig);
+      this.compressedPool = new CompressedShieldedPool(compressionConfig);
 
       return { success: true };
     } catch (error) {
@@ -147,13 +181,26 @@ export class VeilClient {
     this.publicKey = null;
     this.connected = false;
     this.commitment = null;
+
+    // Core privacy modules
     this.shielded = null;
     this.transfer = null;
     this.tokens = null;
     this.dex = null;
+
+    // DAO privacy modules
     this.voting = null;
     this.multisig = null;
     this.staking = null;
+
+    // ShadowWire integration
+    this.shadowWire = null;
+    this.usd1 = null;
+
+    // Light Protocol compression
+    this.compressed = null;
+    this.compressedTokens = null;
+    this.compressedPool = null;
   }
   
   /**

@@ -1,6 +1,6 @@
 {
   "name": "@veil-protocol/cli",
-  "version": "0.1.0",
+  "version": "0.2.1",
   "description": "CLI for scaffolding Veil Protocol privacy-first Solana projects",
   "main": "dist/index.js",
   "bin": {

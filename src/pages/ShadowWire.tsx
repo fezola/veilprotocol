@@ -665,10 +665,105 @@ export default function ShadowWire() {
             </div>
           </div>
 
+          {/* ShadowWire ZK Proof Architecture */}
+          <div className="glass-panel rounded-2xl p-8 mb-8">
+            <h2 className="text-2xl font-semibold mb-6 flex items-center gap-2">
+              <Icon icon="ph:lightning" className="text-purple-400" /> ShadowWire ZK Proof Flow
+            </h2>
+            <div className="bg-secondary/50 rounded-xl p-4 overflow-x-auto border border-purple-500/30">
+              <pre className="text-sm text-foreground font-mono">
+{`┌─────────────────────────────────────────────────────────────────────────────────┐
+│                      SHADOWWIRE PRIVATE TRANSFER FLOW                            │
+├─────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                  │
+│  1. CLIENT (Veil SDK)                                                           │
+│  ────────────────────                                                           │
+│  • Generate Bulletproofs range proof locally                                    │
+│    └── Proves amount in [0, 2^64) without revealing value                       │
+│  • Generate blinding factor for Pedersen commitment                             │
+│  • Create stealth address for recipient (optional)                              │
+│                                                                                  │
+│  2. BACKEND (ShadowWire API)                                                    │
+│  ───────────────────────────                                                    │
+│  • Receive: wallet, token, nonce, signature, plaintext amount                   │
+│  • Compute Pedersen commitment: C = g^amount * h^blinding_factor               │
+│  • Aggregate individual Bulletproofs into batch proof                           │
+│  • Encrypt sender/recipient metadata with NaCl sealed-box                       │
+│  • Prepare Solana instruction data                                              │
+│  • Plaintext amount is ephemeral - used for commitment, then discarded          │
+│                                                                                  │
+│  3. ON-CHAIN (Solana PDA Verifier)                                              │
+│  ─────────────────────────────────                                              │
+│  Submit: commitment + aggregated proof + encrypted data + nullifier             │
+│  • Verify Bulletproofs proof against commitment                                 │
+│  • Check nullifier for double-spend protection                                  │
+│  • Update shielded pool state                                                   │
+│  • Release funds to mixing layer or recipient                                   │
+│                                                                                  │
+│  PRIVACY: Full unlinkability from mixing + encryption stack                     │
+└─────────────────────────────────────────────────────────────────────────────────┘`}
+              </pre>
+            </div>
+          </div>
+
+          {/* Light Protocol Compression */}
+          <div className="glass-panel rounded-2xl p-8 mb-8">
+            <h2 className="text-2xl font-semibold mb-6 flex items-center gap-2">
+              <Icon icon="ph:database" className="text-green-400" /> Light Protocol ZK Compression
+            </h2>
+            <div className="grid md:grid-cols-2 gap-6 mb-6">
+              <div className="border border-border rounded-xl p-4">
+                <h4 className="font-semibold mb-3 text-yellow-400">Standard Accounts</h4>
+                <ul className="space-y-2 text-sm text-muted-foreground">
+                  <li>• ~0.002 SOL rent per account</li>
+                  <li>• Full on-chain storage</li>
+                  <li>• Transparent balances</li>
+                  <li>• High cost for privacy pools</li>
+                </ul>
+              </div>
+              <div className="border border-green-500/30 rounded-xl p-4">
+                <h4 className="font-semibold mb-3 text-green-400">Compressed Accounts</h4>
+                <ul className="space-y-2 text-sm text-muted-foreground">
+                  <li>• ~0.00003 SOL per state (1000x cheaper)</li>
+                  <li>• State stored in Merkle trees</li>
+                  <li>• Private token holdings</li>
+                  <li>• Affordable shielded pool operations</li>
+                </ul>
+              </div>
+            </div>
+            <div className="bg-secondary/50 rounded-xl p-4 overflow-x-auto border border-green-500/30">
+              <pre className="text-sm text-foreground font-mono">
+{`┌─────────────────────────────────────────────────────────────────────────────────┐
+│                      LIGHT PROTOCOL COMPRESSION FLOW                             │
+├─────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                  │
+│  PRIVACY POOLS (Shielded Deposits/Withdrawals)                                  │
+│  ─────────────────────────────────────────────                                  │
+│  • User deposits → creates compressed UTXO in state tree                        │
+│  • Withdrawal → nullifier prevents double-spend, new UTXO created               │
+│  • Merkle proof verifies inclusion without revealing position                   │
+│                                                                                  │
+│  COMPRESSED TOKENS                                                               │
+│  ─────────────────                                                               │
+│  • SPL tokens wrapped as compressed tokens                                      │
+│  • Balances hidden in Merkle leaves                                             │
+│  • Transfer proofs verify balance without revealing amount                      │
+│                                                                                  │
+│  STATE MERKLE TREE                                                               │
+│  ─────────────────                                                               │
+│  • 26 levels deep (67M+ leaves)                                                 │
+│  • 2048 changelog buffer for concurrent updates                                 │
+│  • Poseidon hash for ZK-friendly proofs                                         │
+│                                                                                  │
+└─────────────────────────────────────────────────────────────────────────────────┘`}
+              </pre>
+            </div>
+          </div>
+
           {/* Technical Architecture */}
           <div className="glass-panel rounded-2xl p-8 mb-8">
             <h2 className="text-2xl font-semibold mb-6 flex items-center gap-2">
-              <Icon icon="ph:tree-structure" className="text-primary" /> Technical Architecture
+              <Icon icon="ph:tree-structure" className="text-primary" /> Full Privacy Stack Architecture
             </h2>
             <div className="bg-secondary/50 rounded-xl p-4 overflow-x-auto border border-border">
               <pre className="text-sm text-foreground font-mono">
@@ -696,9 +791,18 @@ export default function ShadowWire() {
 │  ┌─────────────────────────────────┴───────────────────────────────────────────┐  │
 │  │                         SHADOWWIRE SDK (RADR)                                │  │
 │  │                                                                              │  │
-│  │  • Poseidon Hash (ZK-friendly)    • Stealth Addresses    • Bulletproofs     │  │
-│  │  • Commitment Schemes             • Encrypted Messaging  • Range Proofs     │  │
-│  │  • Key Derivation                 • ZK Primitives                           │  │
+│  │  • Bulletproofs Range Proofs   • Pedersen Commitments   • Poseidon Hash     │  │
+│  │  • Stealth Addresses           • NaCl Encryption        • Nullifier System  │  │
+│  │  • Key Derivation              • Gasless Relayer Network                    │  │
+│  └─────────────────────────────────┬───────────────────────────────────────────┘  │
+│                                    │                                               │
+├────────────────────────────────────┼───────────────────────────────────────────────┤
+│                                    │                                               │
+│  ┌─────────────────────────────────┴───────────────────────────────────────────┐  │
+│  │                     LIGHT PROTOCOL (ZK Compression)                          │  │
+│  │                                                                              │  │
+│  │  • Compressed Accounts (1000x cheaper)  • Compressed Tokens (private)       │  │
+│  │  • State Merkle Trees (26 levels)       • 2048 changelog buffer            │  │
 │  └─────────────────────────────────┬───────────────────────────────────────────┘  │
 │                                    │                                               │
 ├────────────────────────────────────┼───────────────────────────────────────────────┤

@@ -49,12 +49,28 @@ const npmPackages = [
     link: "https://www.npmjs.com/package/@veil-protocol/sdk",
   },
   {
+    name: "@veil-protocol/cli",
+    version: "0.2.1",
+    description: "CLI for scaffolding privacy-first Solana projects with ZK architecture docs",
+    install: "npm install -g @veil-protocol/cli",
+    link: "https://www.npmjs.com/package/@veil-protocol/cli",
+  },
+  {
     name: "create-veil-app",
     version: "0.3.2",
     description: "CLI to scaffold privacy-first Solana apps",
     install: "npx create-veil-app my-app",
     link: "https://www.npmjs.com/package/create-veil-app",
   },
+];
+
+const cliCommands = [
+  { command: "veil init <name>", description: "Initialize a new Veil project with privacy features" },
+  { command: "veil info", description: "Show Veil Protocol information and features" },
+  { command: "veil network", description: "Display network configuration help" },
+  { command: "veil shadowwire", description: "Show ShadowWire ZK proof architecture details" },
+  { command: "veil compression", description: "Show Light Protocol ZK compression info" },
+  { command: "veil privacy-stack", description: "Display full privacy stack architecture diagram" },
 ];
 
 export default function CLI() {
@@ -132,6 +148,35 @@ export default function CLI() {
                 <span className="text-green-400">npx</span>{" "}
                 <span className="text-cyan-400">create-veil-app</span>{" "}
                 <span className="text-white">my-privacy-app</span>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* CLI Commands */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.17 }}
+            className="max-w-4xl mx-auto mb-16"
+          >
+            <h2 className="text-2xl font-bold text-center mb-8">CLI Commands</h2>
+            <div className="glass-panel rounded-xl p-6 border border-purple-500/20">
+              <div className="grid md:grid-cols-2 gap-4">
+                {cliCommands.map((cmd, i) => (
+                  <div key={i} className="bg-black/30 rounded-lg p-4 border border-border hover:border-primary/30 transition-colors">
+                    <code className="text-sm font-mono text-cyan-400">{cmd.command}</code>
+                    <p className="text-xs text-muted-foreground mt-2">{cmd.description}</p>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-6 p-4 bg-purple-500/10 rounded-lg border border-purple-500/20">
+                <div className="flex items-center gap-2 mb-2">
+                  <Icon icon="ph:info" className="w-4 h-4 text-purple-400" />
+                  <span className="text-sm font-semibold text-purple-400">New in v0.2.1</span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  The <code className="text-purple-400">shadowwire</code>, <code className="text-purple-400">compression</code>, and <code className="text-purple-400">privacy-stack</code> commands provide detailed ZK proof architecture documentation directly in your terminal.
+                </p>
               </div>
             </div>
           </motion.div>

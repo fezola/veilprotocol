@@ -44,6 +44,36 @@ veil network
 veil info
 ```
 
+### ShadowWire ZK Proof Architecture (New in v0.2.1)
+
+```bash
+veil shadowwire
+```
+
+Shows the complete ZK proof flow:
+- Client-side Bulletproofs generation
+- Backend commitment computation
+- On-chain verification with nullifiers
+
+### Light Protocol ZK Compression (New in v0.2.1)
+
+```bash
+veil compression
+```
+
+Displays Light Protocol integration details:
+- 1000x cheaper compressed accounts
+- State Merkle trees for privacy pools
+- Compressed token holdings
+
+### Full Privacy Stack (New in v0.2.1)
+
+```bash
+veil privacy-stack
+```
+
+Shows the complete privacy architecture diagram with all layers.
+
 ## Network Configuration
 
 ### Devnet (Development)

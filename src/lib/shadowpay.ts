@@ -8,6 +8,32 @@
  * - 'mainnet': Real private transactions via ShadowWire (requires mainnet SOL)
  * - 'devnet': Simulated private transactions on Solana devnet (for testing)
  * - 'demo': Pure simulation, no blockchain interaction
+ *
+ * SHADOWWIRE ZK PROOF ARCHITECTURE:
+ * ─────────────────────────────────
+ *
+ * 1. CLIENT (Veil SDK)
+ *    └── Generate Bulletproofs range proof locally
+ *        └── Proves amount in [0, 2^64) without revealing value
+ *    └── Generate blinding factor for Pedersen commitment
+ *    └── Create stealth address for recipient (optional)
+ *
+ * 2. BACKEND (ShadowWire API)
+ *    └── Receive: wallet, token, nonce, signature, plaintext amount
+ *    └── Compute Pedersen commitment: C = g^amount * h^blinding_factor
+ *    └── Aggregate individual Bulletproofs into batch proof
+ *    └── Encrypt sender/recipient metadata with NaCl sealed-box
+ *    └── Prepare Solana instruction data
+ *    └── Plaintext amount is ephemeral - used for commitment, then discarded
+ *
+ * 3. ON-CHAIN (Solana PDA Verifier)
+ *    └── Submit: commitment + aggregated proof + encrypted data + nullifier
+ *    └── Verify Bulletproofs proof against commitment
+ *    └── Check nullifier for double-spend protection
+ *    └── Update shielded pool state
+ *    └── Release funds to mixing layer or recipient
+ *
+ * PRIVACY: Full unlinkability from mixing + encryption stack
  */
 
 import { ShadowWireClient } from '@radr/shadowwire';

@@ -258,6 +258,43 @@ Private token transfers with hidden amounts.
 
 Veil Protocol extends [ShadowWire](https://shadowwire.xyz) (by RADR) to provide enhanced privacy features.
 
+### ShadowWire ZK Proof Architecture
+
+ShadowWire uses a client → backend → on-chain flow for private transfers:
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                    SHADOWWIRE PRIVATE TRANSFER FLOW                      │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                          │
+│  1. CLIENT (Veil SDK)                                                   │
+│  ────────────────────                                                   │
+│  • Generate Bulletproofs range proof locally                            │
+│    └── Proves amount in [0, 2^64) without revealing value               │
+│  • Generate blinding factor for Pedersen commitment                     │
+│  • Create stealth address for recipient (optional)                      │
+│                                                                          │
+│  2. BACKEND (ShadowWire)                                                │
+│  ───────────────────────                                                │
+│  • Receive: wallet, token, nonce, signature, plaintext amount           │
+│  • Compute Pedersen commitment: C = g^amount * h^blinding_factor       │
+│  • Aggregate individual Bulletproofs into batch proof                   │
+│  • Encrypt sender/recipient metadata with NaCl sealed-box               │
+│  • Prepare Solana instruction data                                      │
+│  • Plaintext amount is ephemeral - used for commitment, then discarded  │
+│                                                                          │
+│  3. ON-CHAIN (Solana PDA Verifier)                                      │
+│  ─────────────────────────────────                                      │
+│  Submit: commitment + aggregated proof + encrypted data + nullifier     │
+│  • Verify Bulletproofs proof against commitment                         │
+│  • Check nullifier for double-spend protection                          │
+│  • Update shielded pool state                                           │
+│  • Release funds to mixing layer or recipient                           │
+│                                                                          │
+│  PRIVACY: Full unlinkability from mixing + encryption stack             │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
 ### How ShadowWire Works with Veil
 
 ShadowWire provides the cryptographic primitives; Veil builds privacy applications on top:
@@ -273,30 +310,41 @@ ShadowWire provides the cryptographic primitives; Veil builds privacy applicatio
 ### How Veil Extends ShadowWire
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                      VEIL PROTOCOL LAYER                        │
-│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌────────┐│
-│  │ Private  │ │ Stealth  │ │ Private  │ │ Private  │ │   ZK   ││
-│  │ Voting   │ │ Multisig │ │ Staking  │ │ Payments │ │Identity││
-│  └────┬─────┘ └────┬─────┘ └────┬─────┘ └────┬─────┘ └───┬────┘│
-│       └────────────┴────────────┴────────────┴───────────┘      │
-│                              │                                   │
-├──────────────────────────────┼───────────────────────────────────┤
-│                              │                                   │
-│  ┌───────────────────────────┴───────────────────────────────┐  │
-│  │                   SHADOWWIRE SDK (RADR)                    │  │
-│  │                                                            │  │
-│  │  • Pedersen Commitments    • Poseidon Hash                │  │
-│  │  • Bulletproofs            • Stealth Addresses            │  │
-│  │  • Range Proofs            • Key Derivation               │  │
-│  └───────────────────────────┬───────────────────────────────┘  │
-│                              │                                   │
-├──────────────────────────────┼───────────────────────────────────┤
-│                              │                                   │
-│  ┌───────────────────────────┴───────────────────────────────┐  │
-│  │                    SOLANA BLOCKCHAIN                       │  │
-│  └───────────────────────────────────────────────────────────┘  │
-└─────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────┐
+│                         VEIL PROTOCOL LAYER                              │
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌────────┐         │
+│  │ Private  │ │ Stealth  │ │ Private  │ │ Private  │ │   ZK   │         │
+│  │ Voting   │ │ Multisig │ │ Staking  │ │ Payments │ │Identity│         │
+│  └────┬─────┘ └────┬─────┘ └────┬─────┘ └────┬─────┘ └───┬────┘         │
+│       └────────────┴────────────┴────────────┴───────────┘               │
+│                              │                                           │
+├──────────────────────────────┼───────────────────────────────────────────┤
+│                              │                                           │
+│  ┌───────────────────────────┴───────────────────────────────────────┐  │
+│  │                      SHADOWWIRE SDK (RADR)                         │  │
+│  │                                                                    │  │
+│  │  • Bulletproofs Range Proofs   • Pedersen Commitments             │  │
+│  │  • Poseidon Hash               • Stealth Addresses                │  │
+│  │  • NaCl Encryption             • Key Derivation                   │  │
+│  │  • Nullifier System            • Gasless Relayer Network          │  │
+│  └───────────────────────────┬───────────────────────────────────────┘  │
+│                              │                                           │
+├──────────────────────────────┼───────────────────────────────────────────┤
+│                              │                                           │
+│  ┌───────────────────────────┴───────────────────────────────────────┐  │
+│  │                    LIGHT PROTOCOL (ZK Compression)                 │  │
+│  │                                                                    │  │
+│  │  • Compressed Accounts (1000x cheaper state)                      │  │
+│  │  • Compressed Tokens (private token holdings)                     │  │
+│  │  • State Merkle Trees (26 levels, 2048 buffer)                   │  │
+│  └───────────────────────────┬───────────────────────────────────────┘  │
+│                              │                                           │
+├──────────────────────────────┼───────────────────────────────────────────┤
+│                              │                                           │
+│  ┌───────────────────────────┴───────────────────────────────────────┐  │
+│  │                       SOLANA BLOCKCHAIN                            │  │
+│  └───────────────────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────────────┘
 ```
 
 ### ShadowPay Integration
@@ -315,7 +363,70 @@ ShadowPay is ShadowWire's private payment system. Veil integrates with it for:
 // veil.config.ts
 integrations: {
   shadowPay: true, // Enable private value transfers
+  lightProtocol: true, // Enable ZK compression
 }
+```
+
+---
+
+## Light Protocol Integration
+
+Veil Protocol uses [Light Protocol](https://lightprotocol.com) for ZK-compressed state management, reducing on-chain costs by up to 1000x.
+
+### Why ZK Compression?
+
+| Standard Accounts | Compressed Accounts |
+|-------------------|---------------------|
+| ~0.002 SOL rent per account | ~0.00003 SOL per compressed state |
+| Full on-chain storage | State stored in Merkle trees |
+| Transparent balances | Private token holdings via compressed tokens |
+| High cost for privacy pools | Affordable shielded pool operations |
+
+### How Veil Uses Light Protocol
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                    LIGHT PROTOCOL COMPRESSION FLOW                       │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                          │
+│  PRIVACY POOLS (Shielded Deposits/Withdrawals)                          │
+│  ─────────────────────────────────────────────                          │
+│  • User deposits → creates compressed UTXO in state tree                │
+│  • Withdrawal → nullifier prevents double-spend, new UTXO created       │
+│  • Merkle proof verifies inclusion without revealing position           │
+│                                                                          │
+│  COMPRESSED TOKENS                                                       │
+│  ─────────────────                                                       │
+│  • SPL tokens wrapped as compressed tokens                              │
+│  • Balances hidden in Merkle leaves                                     │
+│  • Transfer proofs verify balance without revealing amount              │
+│                                                                          │
+│  STATE MERKLE TREE                                                       │
+│  ─────────────────                                                       │
+│  • 26 levels deep (67M+ leaves)                                         │
+│  • 2048 changelog buffer for concurrent updates                         │
+│  • Poseidon hash for ZK-friendly proofs                                 │
+│                                                                          │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+### Compressed Account Operations
+
+```typescript
+import { createRpc, LightSystemProgram } from "@lightprotocol/stateless.js";
+import { createMint, mintTo, transfer } from "@lightprotocol/compressed-token";
+
+// Initialize connection with compression support
+const connection = createRpc(RPC_ENDPOINT, COMPRESSION_ENDPOINT);
+
+// Create compressed token mint (1000x cheaper than SPL)
+const { mint } = await createMint(connection, payer, authority, 9);
+
+// Mint compressed tokens (private by default)
+await mintTo(connection, payer, mint, destination, authority, amount);
+
+// Transfer with ZK proof (amount hidden)
+await transfer(connection, payer, mint, amount, owner, recipient);
 ```
 
 ---

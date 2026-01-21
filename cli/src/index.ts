@@ -207,5 +207,125 @@ program
     console.log(chalk.gray('Full documentation: docs/NETWORK_CONFIGURATION.md'));
   });
 
-program.parse();
+program
+  .command('shadowwire')
+  .description('Show ShadowWire ZK proof architecture')
+  .action(() => {
+    console.log(chalk.magenta('\n⚡ ShadowWire ZK Proof Architecture\n'));
+
+    console.log(chalk.white('Private Transfer Flow:\n'));
+    console.log(chalk.gray('  1. CLIENT (Veil SDK)'));
+    console.log(chalk.gray('     └── Generate Bulletproofs range proof locally'));
+    console.log(chalk.gray('     └── Create blinding factor for Pedersen commitment'));
+    console.log(chalk.gray('     └── Generate stealth address for recipient\n'));
+
+    console.log(chalk.gray('  2. BACKEND (ShadowWire)'));
+    console.log(chalk.gray('     └── Receive: wallet, token, nonce, signature, plaintext amount'));
+    console.log(chalk.gray('     └── Compute Pedersen commitment: C = g^amount * h^blinding'));
+    console.log(chalk.gray('     └── Aggregate Bulletproofs into batch proof'));
+    console.log(chalk.gray('     └── Encrypt metadata with NaCl sealed-box'));
+    console.log(chalk.gray('     └── Plaintext amount is ephemeral - discarded after commitment\n'));
+
+    console.log(chalk.gray('  3. ON-CHAIN (Solana PDA Verifier)'));
+    console.log(chalk.gray('     └── Verify Bulletproofs against commitment'));
+    console.log(chalk.gray('     └── Check nullifier for double-spend protection'));
+    console.log(chalk.gray('     └── Update shielded pool state'));
+    console.log(chalk.gray('     └── Release funds via mixing layer\n'));
+
+    console.log(chalk.white('Privacy Guarantees:\n'));
+    console.log(chalk.green('  ✓ Amount hidden via Pedersen commitments'));
+    console.log(chalk.green('  ✓ Sender-recipient unlinking via mixing pool'));
+    console.log(chalk.green('  ✓ Range proofs verify valid amounts without revealing value'));
+    console.log(chalk.green('  ✓ Nullifiers prevent double-spend'));
+    console.log(chalk.green('  ✓ Full unlinkability from encryption stack\n'));
+
+    console.log(chalk.gray('SDK Package: @radr/shadowwire'));
+    console.log(chalk.gray('Docs: https://shadowwire.xyz/docs'));
+  });
+
+program
+  .command('compression')
+  .description('Show Light Protocol ZK compression info')
+  .action(() => {
+    console.log(chalk.cyan('\n📦 Light Protocol - ZK Compression\n'));
+
+    console.log(chalk.white('What is ZK Compression?\n'));
+    console.log(chalk.gray('  Light Protocol compresses on-chain state using Merkle trees,'));
+    console.log(chalk.gray('  reducing costs by up to 1000x while preserving privacy.\n'));
+
+    console.log(chalk.white('Cost Comparison:\n'));
+    console.log(chalk.yellow('  Standard Account:     ~0.002 SOL rent'));
+    console.log(chalk.green('  Compressed Account:   ~0.00003 SOL per state'));
+    console.log(chalk.gray('  → 1000x cheaper!\n'));
+
+    console.log(chalk.white('How Veil Uses Light Protocol:\n'));
+    console.log(chalk.gray('  PRIVACY POOLS'));
+    console.log(chalk.gray('    └── Deposits create compressed UTXOs in state tree'));
+    console.log(chalk.gray('    └── Withdrawals use nullifiers to prevent double-spend'));
+    console.log(chalk.gray('    └── Merkle proofs verify inclusion without revealing position\n'));
+
+    console.log(chalk.gray('  COMPRESSED TOKENS'));
+    console.log(chalk.gray('    └── SPL tokens wrapped as compressed tokens'));
+    console.log(chalk.gray('    └── Balances hidden in Merkle leaves'));
+    console.log(chalk.gray('    └── Transfer proofs verify balance without revealing amount\n'));
+
+    console.log(chalk.gray('  STATE MERKLE TREE'));
+    console.log(chalk.gray('    └── 26 levels deep (67M+ leaves)'));
+    console.log(chalk.gray('    └── 2048 changelog buffer for concurrent updates'));
+    console.log(chalk.gray('    └── Poseidon hash for ZK-friendly proofs\n'));
+
+    console.log(chalk.white('Enable in veil.config.ts:\n'));
+    console.log(chalk.cyan('  integrations: {'));
+    console.log(chalk.cyan('    lightProtocol: true,'));
+    console.log(chalk.cyan('  }\n'));
+
+    console.log(chalk.gray('SDK Packages:'));
+    console.log(chalk.gray('  @lightprotocol/stateless.js'));
+    console.log(chalk.gray('  @lightprotocol/compressed-token'));
+    console.log(chalk.gray('Docs: https://lightprotocol.com/docs'));
+  });
+
+program
+  .command('privacy-stack')
+  .description('Show full privacy stack architecture')
+  .action(() => {
+    console.log(chalk.cyan('\n🛡️  Veil Protocol - Full Privacy Stack\n'));
+
+    console.log(chalk.white('Architecture Layers:\n'));
+    console.log(chalk.magenta('  ┌────────────────────────────────────────────────┐'));
+    console.log(chalk.magenta('  │               VEIL PROTOCOL LAYER              │'));
+    console.log(chalk.magenta('  │  Private Voting │ Stealth Multisig │ ZK Identity │'));
+    console.log(chalk.magenta('  │  Private Staking │ Shielded Payments │ Recovery   │'));
+    console.log(chalk.magenta('  └──────────────────────┬─────────────────────────┘'));
+    console.log(chalk.gray('                         │'));
+    console.log(chalk.blue('  ┌──────────────────────┴─────────────────────────┐'));
+    console.log(chalk.blue('  │              SHADOWWIRE SDK (RADR)              │'));
+    console.log(chalk.blue('  │  Bulletproofs │ Pedersen Commitments │ Poseidon  │'));
+    console.log(chalk.blue('  │  Stealth Addresses │ NaCl Encryption │ Nullifiers│'));
+    console.log(chalk.blue('  └──────────────────────┬─────────────────────────┘'));
+    console.log(chalk.gray('                         │'));
+    console.log(chalk.green('  ┌──────────────────────┴─────────────────────────┐'));
+    console.log(chalk.green('  │           LIGHT PROTOCOL (ZK Compression)       │'));
+    console.log(chalk.green('  │  Compressed Accounts │ Compressed Tokens        │'));
+    console.log(chalk.green('  │  State Merkle Trees │ 1000x Cost Reduction      │'));
+    console.log(chalk.green('  └──────────────────────┬─────────────────────────┘'));
+    console.log(chalk.gray('                         │'));
+    console.log(chalk.yellow('  ┌──────────────────────┴─────────────────────────┐'));
+    console.log(chalk.yellow('  │                 SOLANA BLOCKCHAIN               │'));
+    console.log(chalk.yellow('  └────────────────────────────────────────────────┘\n'));
+
+    console.log(chalk.white('Enable Full Stack:\n'));
+    console.log(chalk.cyan('  // veil.config.ts'));
+    console.log(chalk.cyan('  integrations: {'));
+    console.log(chalk.cyan('    shadowPay: true,      // ShadowWire private transfers'));
+    console.log(chalk.cyan('    lightProtocol: true,  // ZK compression'));
+    console.log(chalk.cyan('  }\n'));
+
+    console.log(chalk.gray('Commands:'));
+    console.log(chalk.gray('  veil shadowwire    - ShadowWire ZK proof details'));
+    console.log(chalk.gray('  veil compression   - Light Protocol compression'));
+    console.log(chalk.gray('  veil network       - Network configuration'));
+  });
+
+program.parse(process.argv);
 
