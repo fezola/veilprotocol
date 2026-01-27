@@ -14,8 +14,9 @@ import { WalletRecoveryDemoModal } from "@/components/demos/WalletRecoveryDemoMo
 import { GamingDemoModal } from "@/components/demos/GamingDemoModal";
 import { ShadowPayDemoModal } from "@/components/demos/ShadowPayDemoModal";
 import { StakingDemoModal } from "@/components/demos/StakingDemoModal";
+import { ShieldedPoolDemoModal } from "@/components/demos/ShieldedPoolDemoModal";
 
-type DemoCategory = "identity" | "defi" | "dao" | "wallet" | "gaming" | "shadowpay" | "staking";
+type DemoCategory = "identity" | "defi" | "dao" | "wallet" | "gaming" | "shadowpay" | "staking" | "shieldedpool";
 
 interface DemoStep {
   title: string;
@@ -44,6 +45,7 @@ export default function Demo() {
   const [gamingModalOpen, setGamingModalOpen] = useState(false);
   const [shadowpayModalOpen, setShadowpayModalOpen] = useState(false);
   const [stakingModalOpen, setStakingModalOpen] = useState(false);
+  const [shieldedpoolModalOpen, setShieldedpoolModalOpen] = useState(false);
 
   // Demo scenarios
   const demoScenarios = {
@@ -267,6 +269,38 @@ export default function Demo() {
           title: "Withdraw with ZK proof",
           description: "Prove ownership and withdraw without revealing stake history.",
           icon: "ph:check-circle",
+          status: "pending" as const
+        }
+      ]
+    },
+    shieldedpool: {
+      title: "Shielded Pools",
+      subtitle: "Private deposits & withdrawals",
+      icon: "ph:vault",
+      color: "success",
+      steps: [
+        {
+          title: "Create shielded pool",
+          description: "Initialize privacy pool with Merkle tree (8 levels, 256 notes max).",
+          icon: "ph:plus-circle",
+          status: "pending" as const
+        },
+        {
+          title: "Deposit privately",
+          description: "Deposit SOL with Pedersen commitment. Amount hidden using Bulletproofs.",
+          icon: "ph:arrow-down",
+          status: "pending" as const
+        },
+        {
+          title: "View hidden balance",
+          description: "Only you can decrypt and see your shielded balance.",
+          icon: "ph:eye-slash",
+          status: "pending" as const
+        },
+        {
+          title: "Withdraw with nullifier",
+          description: "Spend note using nullifier (prevents double-spend) + ZK proof.",
+          icon: "ph:arrow-up",
           status: "pending" as const
         }
       ]
@@ -769,6 +803,8 @@ export default function Demo() {
                       setShadowpayModalOpen(true);
                     } else if (key === "staking") {
                       setStakingModalOpen(true);
+                    } else if (key === "shieldedpool") {
+                      setShieldedpoolModalOpen(true);
                     }
                   }}
                   className="glass-panel rounded-xl p-6 text-left hover:border-primary/40 transition-all group"
@@ -1110,6 +1146,10 @@ export default function Demo() {
       <StakingDemoModal
         isOpen={stakingModalOpen}
         onClose={() => setStakingModalOpen(false)}
+      />
+      <ShieldedPoolDemoModal
+        isOpen={shieldedpoolModalOpen}
+        onClose={() => setShieldedpoolModalOpen(false)}
       />
     </PageLayout>
   );

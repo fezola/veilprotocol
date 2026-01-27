@@ -1,6 +1,6 @@
 {
   "name": "@veil-protocol/sdk",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Complete privacy infrastructure SDK for Solana - Identity, shielded balances, private voting, stealth multisig, private staking",
   "main": "dist/index.js",
   "module": "dist/index.mjs",

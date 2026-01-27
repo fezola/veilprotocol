@@ -43,10 +43,11 @@ const features = [
 const npmPackages = [
   {
     name: "@veil-protocol/sdk",
-    version: "0.1.0",
-    description: "Privacy SDK with ZK identity, shielded balances, recovery",
+    version: "0.3.0",
+    description: "Privacy SDK with shielded pools, private deposits/withdrawals, ZK identity, voting, staking",
     install: "npm install @veil-protocol/sdk",
     link: "https://www.npmjs.com/package/@veil-protocol/sdk",
+    isNew: true,
   },
   {
     name: "@veil-protocol/cli",
@@ -54,6 +55,7 @@ const npmPackages = [
     description: "CLI for scaffolding privacy-first Solana projects with ZK architecture docs",
     install: "npm install -g @veil-protocol/cli",
     link: "https://www.npmjs.com/package/@veil-protocol/cli",
+    isNew: false,
   },
   {
     name: "create-veil-app",
@@ -61,6 +63,7 @@ const npmPackages = [
     description: "CLI to scaffold privacy-first Solana apps",
     install: "npx create-veil-app my-app",
     link: "https://www.npmjs.com/package/create-veil-app",
+    isNew: false,
   },
 ];
 
@@ -71,6 +74,42 @@ const cliCommands = [
   { command: "veil shadowwire", description: "Show ShadowWire ZK proof architecture details" },
   { command: "veil compression", description: "Show Light Protocol ZK compression info" },
   { command: "veil privacy-stack", description: "Display full privacy stack architecture diagram" },
+];
+
+const sdkMethods = [
+  {
+    category: "Shielded Pools",
+    methods: [
+      { name: "createShieldedPool()", description: "Create a new privacy pool with Merkle tree" },
+      { name: "shieldDeposit()", description: "Deposit funds with hidden amounts (Bulletproofs)" },
+      { name: "shieldWithdraw()", description: "Withdraw privately with nullifier protection" },
+      { name: "getShieldedBalance()", description: "Get your decrypted shielded balance" },
+    ]
+  },
+  {
+    category: "Private Voting",
+    methods: [
+      { name: "createVote()", description: "Create encrypted vote commitment" },
+      { name: "revealVote()", description: "Reveal vote after voting ends" },
+      { name: "getProposalResults()", description: "Get vote tally (individual votes hidden)" },
+    ]
+  },
+  {
+    category: "Private Staking",
+    methods: [
+      { name: "stake()", description: "Stake with hidden amount (Pedersen commitment)" },
+      { name: "getRewards()", description: "Check rewards (only you can decrypt)" },
+      { name: "withdraw()", description: "Withdraw with ZK proof" },
+    ]
+  },
+  {
+    category: "Stealth Multisig",
+    methods: [
+      { name: "createMultisig()", description: "Create M-of-N multisig with hidden signers" },
+      { name: "stealthSign()", description: "Sign without revealing identity" },
+      { name: "executeProposal()", description: "Execute after threshold reached" },
+    ]
+  },
 ];
 
 export default function CLI() {
@@ -178,6 +217,47 @@ export default function CLI() {
                   The <code className="text-purple-400">shadowwire</code>, <code className="text-purple-400">compression</code>, and <code className="text-purple-400">privacy-stack</code> commands provide detailed ZK proof architecture documentation directly in your terminal.
                 </p>
               </div>
+            </div>
+          </motion.div>
+
+          {/* SDK Methods Section */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15 }}
+            className="mb-16"
+          >
+            <h2 className="text-2xl font-bold text-center mb-4">SDK Methods</h2>
+            <p className="text-center text-muted-foreground mb-8">
+              <code className="text-primary">@veil-protocol/sdk@0.3.0</code> — Full privacy stack for Solana
+            </p>
+            <div className="grid md:grid-cols-2 gap-6">
+              {sdkMethods.map((category, i) => (
+                <div key={i} className="glass-panel rounded-xl p-6 border border-primary/20">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Icon icon="ph:code" className="w-5 h-5 text-primary" />
+                    <h3 className="font-semibold text-primary">{category.category}</h3>
+                  </div>
+                  <div className="space-y-3">
+                    {category.methods.map((method, j) => (
+                      <div key={j} className="bg-black/30 rounded-lg p-3 border border-border">
+                        <code className="text-sm font-mono text-cyan-400">{method.name}</code>
+                        <p className="text-xs text-muted-foreground mt-1">{method.description}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="mt-6 p-4 bg-green-500/10 rounded-lg border border-green-500/20 text-center">
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <Icon icon="ph:check-circle" className="w-5 h-5 text-green-400" />
+                <span className="text-sm font-semibold text-green-400">New in SDK v0.3.0</span>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Shielded pools with private deposits, withdrawals, and nullifier-based double-spend protection.
+                Full integration with ShadowWire for hidden transaction amounts.
+              </p>
             </div>
           </motion.div>
 

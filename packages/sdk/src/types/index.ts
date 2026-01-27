@@ -184,3 +184,114 @@ export interface TokenPrivacyConfig {
   hideHoldings: boolean;
 }
 
+// ============================================================================
+// SHIELDED POOL TYPES
+// ============================================================================
+
+/** Parameters for creating a shielded pool */
+export interface CreatePoolParams {
+  /** Unique pool identifier (32 bytes) */
+  poolId: Uint8Array;
+  /** Reward rate in basis points (0-10000) */
+  rewardRateBps: number;
+  /** Lockup period in epochs (1-52) */
+  lockupEpochs: number;
+}
+
+/** Shielded pool state (on-chain) */
+export interface ShieldedPool {
+  /** Pool address */
+  address: PublicKey;
+  /** Pool ID */
+  poolId: Uint8Array;
+  /** Creator public key */
+  creator: PublicKey;
+  /** Reward rate in basis points */
+  rewardRateBps: number;
+  /** Lockup epochs */
+  lockupEpochs: number;
+  /** Current Merkle root of note commitments */
+  merkleRoot: Uint8Array;
+  /** Next note index */
+  nextNoteIndex: number;
+  /** Total notes created */
+  totalNotes: number;
+  /** Number of nullifiers (spent notes) */
+  nullifierCount: number;
+  /** Creation timestamp */
+  createdAt: number;
+  /** Pool active status */
+  isActive: boolean;
+}
+
+/** Parameters for depositing to a shielded pool */
+export interface PoolDepositParams {
+  /** Pool to deposit to */
+  pool: PublicKey;
+  /** Amount to deposit (in SOL) */
+  amount: number;
+  /** Note commitment = H(amount || blinding || owner_commitment) */
+  noteCommitment: Uint8Array;
+  /** Encrypted note data (only owner can decrypt) */
+  encryptedNote: Uint8Array;
+  /** Bulletproofs range proof */
+  rangeProof: Uint8Array;
+}
+
+/** Parameters for withdrawing from a shielded pool */
+export interface PoolWithdrawParams {
+  /** Pool to withdraw from */
+  pool: PublicKey;
+  /** Nullifier to prevent double-spend */
+  nullifier: Uint8Array;
+  /** Merkle proof for note membership */
+  merkleProof: Uint8Array[];
+  /** Merkle path indices (bit flags) */
+  merklePathIndices: number;
+  /** ZK proof for valid withdrawal */
+  withdrawalProof: Uint8Array;
+  /** Output commitment for change (or zero for full withdraw) */
+  outputCommitment: Uint8Array;
+  /** Recipient public key */
+  recipient: PublicKey;
+}
+
+/** Shielded note (represents a hidden stake/deposit) */
+export interface ShieldedNote {
+  /** Pool this note belongs to */
+  pool: PublicKey;
+  /** Note commitment */
+  commitment: Uint8Array;
+  /** Encrypted note data */
+  encryptedData: Uint8Array;
+  /** Index in Merkle tree */
+  noteIndex: number;
+  /** Creation timestamp */
+  createdAt: number;
+  /** Unlock timestamp */
+  unlockAt: number;
+  /** Whether the note has been spent */
+  isSpent: boolean;
+}
+
+/** Result of a pool operation */
+export interface PoolOperationResult {
+  success: boolean;
+  signature?: string;
+  noteCommitment?: Uint8Array;
+  nullifier?: Uint8Array;
+  error?: string;
+}
+
+/** Client-side note data (decrypted) */
+export interface DecryptedNote {
+  /** Amount in lamports */
+  amount: bigint;
+  /** Blinding factor */
+  blindingFactor: Uint8Array;
+  /** Owner commitment */
+  ownerCommitment: Uint8Array;
+  /** Unlock timestamp */
+  unlockAt: number;
+}
+

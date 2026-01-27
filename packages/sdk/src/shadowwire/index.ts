@@ -393,6 +393,159 @@ export class ShadowWireIntegration {
   async getStakingRewards(stakeCommitment: Uint8Array) {
     return this.staking.getRewardsInfo(stakeCommitment);
   }
+
+  // ============================================================================
+  // SHIELDED POOLS (Private Deposit/Withdraw)
+  // ============================================================================
+
+  /**
+   * Create a new shielded pool for private deposits
+   *
+   * @param poolId Unique 32-byte pool identifier
+   * @param rewardRateBps Reward rate in basis points (0-10000)
+   * @param lockupEpochs Lockup period in epochs
+   * @param signTransaction Wallet sign function
+   */
+  async createShieldedPool(
+    creator: PublicKey,
+    poolId: Uint8Array,
+    rewardRateBps: number,
+    lockupEpochs: number,
+    signTransaction: (tx: Transaction) => Promise<Transaction>
+  ): Promise<{ success: boolean; poolAddress?: PublicKey; signature?: string; error?: string }> {
+    try {
+      // Import shielded module
+      const { ShieldedBalanceClient, VEIL_PROGRAM_ID, SHIELDED_POOL_SEED } = await import('../shielded');
+
+      const client = new ShieldedBalanceClient(this.connection, this.encryptionKey);
+      const result = await client.createPool(
+        creator,
+        { poolId, rewardRateBps, lockupEpochs },
+        signTransaction
+      );
+
+      if (result.success) {
+        // Derive pool address for response
+        const [poolAddress] = PublicKey.findProgramAddressSync(
+          [Buffer.from(SHIELDED_POOL_SEED), creator.toBuffer(), poolId],
+          VEIL_PROGRAM_ID
+        );
+        return { success: true, poolAddress, signature: result.signature };
+      }
+
+      return { success: false, error: result.error };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Pool creation failed',
+      };
+    }
+  }
+
+  /**
+   * Deposit funds into a shielded pool (shield)
+   * Creates a note with hidden amount using Pedersen commitment
+   *
+   * @param wallet User's wallet
+   * @param amount Amount in SOL to deposit
+   * @param pool Pool address (optional, uses default pool if not specified)
+   * @param signTransaction Wallet sign function
+   */
+  async shieldDeposit(
+    wallet: PublicKey,
+    amount: number,
+    signTransaction: (tx: Transaction) => Promise<Transaction>,
+    pool?: PublicKey
+  ): Promise<{ success: boolean; signature?: string; noteCommitment?: Uint8Array; error?: string }> {
+    try {
+      const { ShieldedBalanceClient } = await import('../shielded');
+      const client = new ShieldedBalanceClient(this.connection, this.encryptionKey);
+
+      // Generate range proof for amount
+      const rangeProof = await this.generateRangeProof(BigInt(Math.floor(amount * 1e9)), 64);
+
+      const result = await client.deposit(wallet, amount, signTransaction, pool);
+
+      return {
+        success: result.success,
+        signature: result.signature,
+        noteCommitment: result.noteCommitment,
+        error: result.error,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Deposit failed',
+      };
+    }
+  }
+
+  /**
+   * Withdraw funds from a shielded pool (unshield)
+   * Spends a note using nullifier to prevent double-spend
+   *
+   * @param wallet User's wallet
+   * @param amount Amount to withdraw
+   * @param recipient Recipient address
+   * @param pool Pool address (optional)
+   * @param signTransaction Wallet sign function
+   */
+  async shieldWithdraw(
+    wallet: PublicKey,
+    amount: number,
+    recipient: PublicKey,
+    signTransaction: (tx: Transaction) => Promise<Transaction>,
+    pool?: PublicKey
+  ): Promise<{ success: boolean; signature?: string; nullifier?: Uint8Array; error?: string }> {
+    try {
+      const { ShieldedBalanceClient } = await import('../shielded');
+      const client = new ShieldedBalanceClient(this.connection, this.encryptionKey);
+
+      const result = await client.withdraw(wallet, amount, recipient, signTransaction, pool);
+
+      return {
+        success: result.success,
+        signature: result.signature,
+        nullifier: result.nullifier,
+        error: result.error,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Withdrawal failed',
+      };
+    }
+  }
+
+  /**
+   * Get shielded balance (decrypted, only visible to owner)
+   */
+  async getShieldedBalance(): Promise<number> {
+    const { ShieldedBalanceClient } = await import('../shielded');
+    const client = new ShieldedBalanceClient(this.connection, this.encryptionKey);
+    return client.getShieldedBalance();
+  }
+
+  /**
+   * Get pool information
+   */
+  async getPoolInfo(poolAddress: PublicKey): Promise<{
+    merkleRoot: Uint8Array;
+    totalNotes: number;
+    isActive: boolean;
+  } | null> {
+    const { ShieldedBalanceClient } = await import('../shielded');
+    const client = new ShieldedBalanceClient(this.connection, this.encryptionKey);
+    const pool = await client.getPool(poolAddress);
+
+    if (!pool) return null;
+
+    return {
+      merkleRoot: pool.merkleRoot,
+      totalNotes: pool.totalNotes,
+      isActive: pool.isActive,
+    };
+  }
 }
 
 // ============================================================================
@@ -531,7 +684,7 @@ export type { SignerSecret } from '../multisig';
 /**
  * Create a ShadowWire integration client
  */
-export function createShadowWireClient(config: ShadowWireConfig): ShadowWireIntegration {
+export function createShadowWireIntegration(config: ShadowWireConfig): ShadowWireIntegration {
   return new ShadowWireIntegration(config);
 }
 

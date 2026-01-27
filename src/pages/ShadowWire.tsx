@@ -155,8 +155,84 @@ multisig.execute(&vault_address, &transaction_to_approve).await?;`
   }
 ];
 
+// Code examples for Shielded Pools
+const poolCodeExamples = [
+  {
+    language: "typescript",
+    label: "TypeScript",
+    icon: "logos:typescript-icon",
+    code: `import { ShadowWireIntegration } from '@veil-protocol/sdk';
+
+const shadowWire = new ShadowWireIntegration({ connection, encryptionKey });
+
+// 1. CREATE SHIELDED POOL
+const { poolAddress } = await shadowWire.createShieldedPool(
+  wallet,
+  poolId,
+  500,  // 5% reward rate
+  1,    // 1 epoch lockup
+  signTransaction
+);
+
+// 2. PRIVATE DEPOSIT (amount HIDDEN on-chain!)
+const { noteCommitment } = await shadowWire.shieldDeposit(
+  wallet,
+  1.5,  // 1.5 SOL - hidden via Pedersen commitment
+  signTransaction,
+  poolAddress
+);
+// On-chain: Only commitment hash visible, not "1.5 SOL"
+
+// 3. CHECK SHIELDED BALANCE (only you can decrypt)
+const balance = await shadowWire.getShieldedBalance(wallet, poolAddress);
+console.log('Shielded balance:', balance, 'SOL');
+
+// 4. PRIVATE WITHDRAWAL (nullifier prevents double-spend)
+await shadowWire.shieldWithdraw(
+  wallet,
+  1.0,  // Withdraw 1 SOL privately
+  recipientWallet,
+  signTransaction,
+  poolAddress
+);`
+  },
+  {
+    language: "rust",
+    label: "Rust",
+    icon: "logos:rust",
+    code: `use veil_protocol::shielded::{ShieldedPool, ShieldedNote};
+
+// Create shielded pool
+let pool = ShieldedPool::create(
+    &connection,
+    &creator,
+    pool_id,
+    500,  // 5% reward rate
+    1,    // 1 epoch lockup
+).await?;
+
+// Private deposit (amount hidden)
+let note = pool.deposit(
+    &wallet,
+    1_500_000_000,  // 1.5 SOL in lamports - hidden!
+    &signer,
+).await?;
+
+// Check balance (only owner can decrypt)
+let balance = pool.get_balance(&wallet).await?;
+
+// Private withdrawal with nullifier
+pool.withdraw(
+    &wallet,
+    1_000_000_000,  // 1 SOL
+    &recipient,
+    &signer,
+).await?;`
+  }
+];
+
 export default function ShadowWire() {
-  const [activeTab, setActiveTab] = useState<"voting" | "multisig" | "staking">("voting");
+  const [activeTab, setActiveTab] = useState<"pools" | "voting" | "multisig" | "staking">("pools");
 
   return (
     <div className="min-h-screen bg-background">
@@ -338,7 +414,15 @@ export default function ShadowWire() {
 
           {/* Deep Dive Tabs */}
           <div className="glass-panel rounded-2xl p-8 mb-8">
-            <div className="flex gap-4 mb-6 border-b border-border pb-4">
+            <div className="flex flex-wrap gap-4 mb-6 border-b border-border pb-4">
+              <button
+                onClick={() => setActiveTab("pools")}
+                className={`px-4 py-2 rounded-lg font-medium transition-colors ${activeTab === "pools" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+              >
+                <Icon icon="ph:vault" className="inline w-4 h-4 mr-2" />
+                Shielded Pools
+                <span className="ml-2 text-xs bg-green-500/20 text-green-400 px-2 py-0.5 rounded-full">NEW</span>
+              </button>
               <button
                 onClick={() => setActiveTab("voting")}
                 className={`px-4 py-2 rounded-lg font-medium transition-colors ${activeTab === "voting" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
@@ -361,6 +445,94 @@ export default function ShadowWire() {
                 Private Staking
               </button>
             </div>
+
+            {/* Shielded Pools Tab */}
+            {activeTab === "pools" && (
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                    <Icon icon="ph:vault" className="text-primary" />
+                    Shielded Pools: Private Deposits & Withdrawals
+                  </h3>
+                  <p className="text-muted-foreground mb-4">
+                    Shielded pools allow you to <strong>deposit and withdraw funds with hidden amounts</strong>.
+                    Using Pedersen commitments and Bulletproofs range proofs, your transaction amounts are
+                    completely hidden on-chain while still being verifiable.
+                  </p>
+                </div>
+
+                {/* Pool Flow Diagram */}
+                <div className="bg-secondary/50 rounded-xl p-4 overflow-x-auto border border-border">
+                  <pre className="text-sm text-foreground font-mono">
+{`┌─────────────────────────────────────────────────────────────────────────┐
+│                      SHIELDED POOL ARCHITECTURE                          │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                          │
+│  DEPOSIT FLOW                           WITHDRAWAL FLOW                  │
+│  ────────────                           ───────────────                  │
+│                                                                          │
+│  User deposits: 1.5 SOL ──┐             User withdraws: 1.0 SOL ──┐     │
+│                           │                                        │     │
+│  ┌────────────────────────▼───────────┐  ┌────────────────────────▼───┐ │
+│  │  1. Generate blinding factor       │  │  1. Compute nullifier      │ │
+│  │  2. Create Pedersen commitment     │  │     H(note + owner_secret) │ │
+│  │     C = amount*G + blinding*H      │  │  2. Generate Merkle proof  │ │
+│  │  3. Generate Bulletproofs proof    │  │  3. Generate ZK proof      │ │
+│  │     (proves amount in [0, 2^64))   │  │                            │ │
+│  └────────────────────────┬───────────┘  └────────────────────────┬───┘ │
+│                           │                                        │     │
+│                           ▼                                        ▼     │
+│  ┌────────────────────────────────────┐  ┌────────────────────────────┐ │
+│  │  ON-CHAIN: Note added to Merkle    │  │  ON-CHAIN: Nullifier marks │ │
+│  │  tree. Amount HIDDEN, only         │  │  note as spent. Funds sent │ │
+│  │  commitment visible.               │  │  to recipient privately.   │ │
+│  └────────────────────────────────────┘  └────────────────────────────┘ │
+│                                                                          │
+│  PRIVACY GUARANTEES:                                                     │
+│  ✓ Deposit amounts hidden via Pedersen commitments                      │
+│  ✓ Withdrawal amounts hidden via ZK proofs                              │
+│  ✓ Double-spend prevented via nullifier system                          │
+│  ✓ Note ownership proven without revealing identity                     │
+└─────────────────────────────────────────────────────────────────────────┘`}
+                  </pre>
+                </div>
+
+                {/* ShadowWire Primitives Used */}
+                <div className="border border-border rounded-xl p-4">
+                  <h4 className="font-semibold mb-3 flex items-center gap-2">
+                    <Icon icon="ph:puzzle-piece" className="text-primary" />
+                    ShadowWire Primitives Used
+                  </h4>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div className="bg-secondary/30 rounded-lg p-3">
+                      <div className="text-xs text-muted-foreground uppercase mb-1">Pedersen Commitments</div>
+                      <p className="text-sm">Hide amounts while allowing arithmetic verification</p>
+                    </div>
+                    <div className="bg-secondary/30 rounded-lg p-3">
+                      <div className="text-xs text-muted-foreground uppercase mb-1">Bulletproofs</div>
+                      <p className="text-sm">Prove amounts are in valid range [0, 2^64)</p>
+                    </div>
+                    <div className="bg-secondary/30 rounded-lg p-3">
+                      <div className="text-xs text-muted-foreground uppercase mb-1">Nullifier System</div>
+                      <p className="text-sm">Prevent double-spending of shielded notes</p>
+                    </div>
+                    <div className="bg-secondary/30 rounded-lg p-3">
+                      <div className="text-xs text-muted-foreground uppercase mb-1">Merkle Tree</div>
+                      <p className="text-sm">Prove note membership without revealing position</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Code Example */}
+                <div>
+                  <h4 className="font-semibold mb-3 flex items-center gap-2">
+                    <Icon icon="ph:code" className="text-primary" />
+                    Implementation
+                  </h4>
+                  <CodeBlock examples={poolCodeExamples} />
+                </div>
+              </div>
+            )}
 
             {activeTab === "voting" && (
               <div className="space-y-6">

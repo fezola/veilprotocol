@@ -237,7 +237,7 @@ export class VeilClient {
 // VERSION & CONSTANTS
 // ============================================================================
 
-export const VERSION = '0.1.0';
+export const VERSION = '0.3.0';
 export const VEIL_PROGRAM_ID = new PublicKey('5C1VaebPdHZYETnTL18cLJK2RexXmVVhkkYpnYHD5P4h');
 
 // Re-export token constants

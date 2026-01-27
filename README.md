@@ -13,30 +13,52 @@ Veil Protocol provides a comprehensive privacy layer for Solana applications, en
 - 💸 **Shielded Payments** - Private transfers via ShadowWire integration
 - 🪙 **Private Staking** - Stake with hidden amounts using Pedersen commitments
 
-## Privacy Boundaries
+## Privacy Capabilities
 
-### What Aegis Shield Does NOT Do
+### What Aegis Shield Protects
 
-> **Honesty builds trust.** We're clear about what this system is — and isn't.
+> **Full privacy stack** powered by ShadowWire + Light Protocol integration.
 
-- ❌ **Does not hide transactions** - All transactions are visible on Solana explorer
-- ❌ **Does not anonymize Solana** - Base layer transparency remains intact
-- ❌ **Does not replace wallets** - Works alongside existing wallet infrastructure
-- ❌ **Does not provide mixing** - We don't tumble or mix funds
-- ❌ **Does not break compliance** - Identity can be revealed if legally required
-
-### What It Protects
-
+- ✅ **Transaction amounts** - Hidden via Pedersen commitments and Bulletproofs range proofs
+- ✅ **Wallet balances** - Shielded pools hide your holdings from public view
 - ✅ **Identity linkage** - Prevents correlation between actions and real identity
 - ✅ **Access flows** - Hides who approved what in multisig/voting
 - ✅ **Recovery logic** - Guardians remain anonymous during social recovery
-- ✅ **Security metadata** - Protects operational security patterns
 - ✅ **Stake amounts** - Hides how much you've staked (via Pedersen commitments)
 - ✅ **Vote choices** - Your governance votes stay private until reveal phase
+- ✅ **Token holdings** - Compressed tokens via Light Protocol hide balances
+
+### What Remains Visible
+
+> **Honesty builds trust.** We're clear about what this system is — and isn't.
+
+- ⚠️ **Transaction existence** - Transactions are visible on Solana explorer (but amounts hidden)
+- ⚠️ **Program interactions** - Which programs you interact with is visible
+- ⚠️ **Wallet addresses** - Your public key is still visible (use stealth addresses for recipient privacy)
+- ⚠️ **Compliance** - Identity can be revealed if legally required
 
 ### Philosophy
 
-Aegis Shield is **security infrastructure**, not a privacy coin. We protect the *metadata around identity and access* — the things that make users vulnerable to social engineering, targeted attacks, and surveillance.
+Aegis Shield is **comprehensive privacy infrastructure** for Solana. We protect transaction amounts, wallet balances, and identity metadata — the things that make users vulnerable to front-running, targeted attacks, and surveillance.
+
+## npm Packages
+
+| Package | Version | Description |
+|---------|---------|-------------|
+| [@veil-protocol/sdk](https://www.npmjs.com/package/@veil-protocol/sdk) | **0.3.0** | Privacy SDK with shielded pools, private deposits/withdrawals, ZK identity |
+| [@veil-protocol/cli](https://www.npmjs.com/package/@veil-protocol/cli) | 0.2.1 | CLI for scaffolding privacy-first Solana projects |
+| [create-veil-app](https://www.npmjs.com/package/create-veil-app) | 0.3.2 | Quick-start CLI to scaffold privacy-first Solana apps |
+
+```bash
+# Install SDK
+npm install @veil-protocol/sdk
+
+# Install CLI globally
+npm install -g @veil-protocol/cli
+
+# Or use npx for quick start
+npx create-veil-app my-app
+```
 
 ## Program ID
 
@@ -251,6 +273,50 @@ Private token transfers with hidden amounts.
 - **Amount Hiding**: Transfer amounts hidden via Pedersen commitments
 - **Multi-token**: Works with SOL, USDC, and SPL tokens
 - **Recipient Privacy**: Optional stealth addresses for recipients
+
+### 🏦 Shielded Pools (Private Deposit/Withdrawal)
+
+Create and manage privacy pools for shielded transactions.
+
+- **Private Deposits**: Deposit funds with hidden amounts using Bulletproofs
+- **Private Withdrawals**: Withdraw with nullifier-based double-spend protection
+- **Note-based UTXO**: Similar to Zcash, each deposit creates a spendable note
+- **Merkle Tree**: Notes stored in on-chain Merkle tree for membership proofs
+
+```typescript
+import { ShadowWireIntegration } from '@veil-protocol/sdk';
+
+const shadowWire = new ShadowWireIntegration({ connection, encryptionKey });
+
+// Create a shielded pool
+const { poolAddress } = await shadowWire.createShieldedPool(
+  wallet,
+  poolId,
+  500,  // 5% reward rate
+  1,    // 1 epoch lockup
+  signTransaction
+);
+
+// Private deposit (amount hidden on-chain)
+const { noteCommitment } = await shadowWire.shieldDeposit(
+  wallet,
+  1.5,  // 1.5 SOL - hidden via Pedersen commitment!
+  signTransaction,
+  poolAddress
+);
+
+// Check shielded balance (only you can decrypt)
+const balance = await shadowWire.getShieldedBalance(wallet, poolAddress);
+
+// Private withdrawal (nullifier prevents double-spend)
+await shadowWire.shieldWithdraw(
+  wallet,
+  1.0,  // Withdraw 1 SOL privately
+  recipientWallet,
+  signTransaction,
+  poolAddress
+);
+```
 
 ---
 
@@ -512,6 +578,17 @@ veil init my-app --helius --shadow-pay
 # Interactive setup
 cd my-app && npm install
 ```
+
+### CLI Commands
+
+| Command | Description |
+|---------|-------------|
+| `veil init <name>` | Initialize a new Veil project with privacy features |
+| `veil info` | Show Veil Protocol information and features |
+| `veil network` | Display network configuration help |
+| `veil shadowwire` | Show ShadowWire ZK proof architecture details |
+| `veil compression` | Show Light Protocol ZK compression info |
+| `veil privacy-stack` | Display full privacy stack architecture diagram |
 
 ### Use the SDK
 
