@@ -24,7 +24,7 @@ export const DEVNET_ENDPOINT = 'https://api.devnet.solana.com';
  */
 async function sendTransactionWithRetry(
   connection: Connection,
-  transaction: Transaction,
+  instructions: TransactionInstruction[],
   signTransaction: (tx: Transaction) => Promise<Transaction>,
   userPubkey: PublicKey,
   maxRetries: number = 3
@@ -33,19 +33,24 @@ async function sendTransactionWithRetry(
 
   for (let i = 0; i < maxRetries; i++) {
     try {
+      // Create FRESH transaction for each attempt (important!)
+      const transaction = new Transaction();
+      instructions.forEach(ix => transaction.add(ix));
+
       // Get fresh blockhash for each attempt
-      const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('finalized');
+      const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('confirmed');
       transaction.recentBlockhash = blockhash;
       transaction.feePayer = userPubkey;
+
+      console.log(`Transaction attempt ${i + 1} with blockhash: ${blockhash.slice(0, 8)}...`);
 
       // Sign the transaction
       const signed = await signTransaction(transaction);
 
       // Send with skipPreflight for faster submission
       const signature = await connection.sendRawTransaction(signed.serialize(), {
-        skipPreflight: false,
+        skipPreflight: true, // Skip preflight to avoid "already processed" on retry
         preflightCommitment: 'confirmed',
-        maxRetries: 3,
       });
 
       // Wait for confirmation with timeout
@@ -64,13 +69,22 @@ async function sendTransactionWithRetry(
       lastError = err;
       console.warn(`Transaction attempt ${i + 1} failed:`, err.message);
 
-      // If it's not a blockhash error, don't retry
-      if (!err.message?.includes('Blockhash') && !err.message?.includes('block height exceeded')) {
+      // If transaction already processed, it succeeded - try to find it
+      if (err.message?.includes('already been processed')) {
+        console.log('Transaction was already processed - likely succeeded');
+        // Return a placeholder, or you could query for the recent tx
+        throw new Error('Transaction already processed. Please refresh and try again.');
+      }
+
+      // If it's not a retryable error, don't retry
+      if (!err.message?.includes('Blockhash') &&
+          !err.message?.includes('block height exceeded') &&
+          !err.message?.includes('timeout')) {
         throw err;
       }
 
       // Wait a bit before retry
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise(resolve => setTimeout(resolve, 1000));
     }
   }
 
@@ -124,12 +138,9 @@ export async function initializeCommitment(
     data: instructionData,
   });
 
-  // Build transaction (blockhash will be set by sendTransactionWithRetry)
-  const transaction = new Transaction().add(instruction);
-
   const signature = await sendTransactionWithRetry(
     connection,
-    transaction,
+    [instruction],
     signTransaction,
     userPubkey
   );
@@ -148,7 +159,7 @@ export async function submitProof(
   publicSignals: Uint8Array[], // Array of 32-byte public signals
   signTransaction: (tx: Transaction) => Promise<Transaction>
 ): Promise<string> {
-  const [walletPDA] = await getWalletAccountPDA(userPubkey);
+  const [walletPDA] = getWalletAccountPDA(userPubkey);
 
   // Serialize the instruction data
   // Discriminator from IDL: [54, 241, 46, 84, 4, 212, 46, 94]
@@ -176,9 +187,7 @@ export async function submitProof(
     data: instructionData,
   });
 
-  const transaction = new Transaction().add(instruction);
-
-  return sendTransactionWithRetry(connection, transaction, signTransaction, userPubkey);
+  return sendTransactionWithRetry(connection, [instruction], signTransaction, userPubkey);
 }
 
 /**
@@ -191,7 +200,7 @@ export async function initiateRecovery(
   timelockDays: number, // 1-90 days
   signTransaction: (tx: Transaction) => Promise<Transaction>
 ): Promise<string> {
-  const [walletPDA] = await getWalletAccountPDA(userPubkey);
+  const [walletPDA] = getWalletAccountPDA(userPubkey);
 
   const instructionData = Buffer.concat([
     Buffer.from([132, 148, 60, 74, 49, 178, 235, 187]), // "initiate_recovery" discriminator from IDL
@@ -208,9 +217,7 @@ export async function initiateRecovery(
     data: instructionData,
   });
 
-  const transaction = new Transaction().add(instruction);
-
-  return sendTransactionWithRetry(connection, transaction, signTransaction, userPubkey);
+  return sendTransactionWithRetry(connection, [instruction], signTransaction, userPubkey);
 }
 
 /**
@@ -222,7 +229,7 @@ export async function executeRecovery(
   recoveryProof: Uint8Array,
   signTransaction: (tx: Transaction) => Promise<Transaction>
 ): Promise<string> {
-  const [walletPDA] = await getWalletAccountPDA(userPubkey);
+  const [walletPDA] = getWalletAccountPDA(userPubkey);
 
   const proofLengthBuffer = Buffer.alloc(4);
   proofLengthBuffer.writeUInt32LE(recoveryProof.length, 0);
@@ -242,9 +249,7 @@ export async function executeRecovery(
     data: instructionData,
   });
 
-  const transaction = new Transaction().add(instruction);
-
-  return sendTransactionWithRetry(connection, transaction, signTransaction, userPubkey);
+  return sendTransactionWithRetry(connection, [instruction], signTransaction, userPubkey);
 }
 
 /**
@@ -255,7 +260,7 @@ export async function cancelRecovery(
   userPubkey: PublicKey,
   signTransaction: (tx: Transaction) => Promise<Transaction>
 ): Promise<string> {
-  const [walletPDA] = await getWalletAccountPDA(userPubkey);
+  const [walletPDA] = getWalletAccountPDA(userPubkey);
 
   const instructionData = Buffer.from([176, 23, 203, 37, 121, 251, 227, 83]); // "cancel_recovery" discriminator from IDL
 
@@ -268,9 +273,7 @@ export async function cancelRecovery(
     data: instructionData,
   });
 
-  const transaction = new Transaction().add(instruction);
-
-  return sendTransactionWithRetry(connection, transaction, signTransaction, userPubkey);
+  return sendTransactionWithRetry(connection, [instruction], signTransaction, userPubkey);
 }
 
 /**
