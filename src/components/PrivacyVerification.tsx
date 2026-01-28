@@ -47,9 +47,16 @@ export function PrivacyVerification() {
     },
     {
       label: "Transaction Amounts",
-      status: "public",
-      explanation: "Solana is a transparent blockchain - transaction amounts are visible. Veil focuses on IDENTITY privacy, not amount privacy. Use with private payment protocols for full privacy.",
+      status: "hidden",
+      explanation: "With Shielded Pools, your transaction amounts are HIDDEN on-chain using Pedersen commitments and Bulletproofs range proofs. Only cryptographic commitments are stored — not actual amounts. Use the Shielded Pool demo to deposit/withdraw privately.",
       icon: "ph:currency-circle-dollar",
+      verifiable: true,
+    },
+    {
+      label: "Wallet Balances",
+      status: "hidden",
+      explanation: "Your shielded pool balance is encrypted and hidden from public view. Only YOU can decrypt and view your balance. On-chain observers see only encrypted data, not your actual holdings.",
+      icon: "ph:vault",
       verifiable: true,
     },
     {

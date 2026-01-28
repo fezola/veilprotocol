@@ -3,19 +3,42 @@ import { Link, useNavigate } from "react-router-dom";
 import { Icon } from "@iconify/react";
 import { motion } from "framer-motion";
 import { PageLayout } from "@/components/layout/PageLayout";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 
 export default function WalletCreated() {
   const navigate = useNavigate();
+  const { veilWallet, recoveryKey, downloadRecoveryKey, isAuthenticated } = useAuth();
+  const { toast } = useToast();
   const [showAddress, setShowAddress] = useState(false);
-  
-  // Simulated wallet address
-  const walletAddress = "Vei1...x7Kp";
-  const fullAddress = "Vei1Hk9mNxPqR5sT8uW2yZ3aB6cD4eF7gJ0kL1nO9pQ8rS5tU6vX7Kp";
+  const [keyDownloaded, setKeyDownloaded] = useState(false);
+
+  // Use real wallet address from auth context
+  const fullAddress = veilWallet || "Generating...";
+  const shortAddress = fullAddress.length > 16
+    ? `${fullAddress.slice(0, 8)}...${fullAddress.slice(-8)}`
+    : fullAddress;
 
   useEffect(() => {
     const timer = setTimeout(() => setShowAddress(true), 500);
     return () => clearTimeout(timer);
   }, []);
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!isAuthenticated) {
+      navigate("/login", { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
+
+  const handleDownloadKey = () => {
+    downloadRecoveryKey();
+    setKeyDownloaded(true);
+    toast({
+      title: "Recovery Key Downloaded!",
+      description: "Keep this file safe. You'll need it to recover your wallet.",
+    });
+  };
 
   return (
     <PageLayout hideFooter>
@@ -67,6 +90,58 @@ export default function WalletCreated() {
             </button>
           </motion.div>
 
+          {/* CRITICAL: Download Recovery Key */}
+          {recoveryKey && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: showAddress ? 1 : 0, y: showAddress ? 0 : 20 }}
+              transition={{ delay: 0.2 }}
+              className={`glass-panel rounded-xl p-6 mb-6 text-left border-2 ${
+                keyDownloaded ? 'border-success/30 bg-success/5' : 'border-warning/50 bg-warning/5'
+              }`}
+            >
+              <div className="flex items-start gap-4">
+                <div className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 ${
+                  keyDownloaded ? 'bg-success/10' : 'bg-warning/10'
+                }`}>
+                  <Icon
+                    icon={keyDownloaded ? "ph:check-circle-fill" : "ph:warning-fill"}
+                    className={`w-6 h-6 ${keyDownloaded ? 'text-success' : 'text-warning'}`}
+                  />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold mb-1">
+                    {keyDownloaded ? "Recovery Key Saved!" : "⚠️ Download Your Recovery Key"}
+                  </h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    {keyDownloaded
+                      ? "Keep this file safe. You can use it to restore your wallet on any device."
+                      : "This is the ONLY way to recover your wallet if you log out or switch devices. Download it now!"
+                    }
+                  </p>
+                  {!keyDownloaded && (
+                    <button
+                      onClick={handleDownloadKey}
+                      className="w-full py-3 bg-warning text-warning-foreground font-medium rounded-lg hover:bg-warning/90 transition-colors flex items-center justify-center gap-2"
+                    >
+                      <Icon icon="ph:download-simple" className="w-5 h-5" />
+                      Download Recovery Key
+                    </button>
+                  )}
+                  {keyDownloaded && (
+                    <button
+                      onClick={handleDownloadKey}
+                      className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-2"
+                    >
+                      <Icon icon="ph:download-simple" className="w-4 h-4" />
+                      Download Again
+                    </button>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          )}
+
           {/* Privacy Guarantees */}
           <div className="glass-panel rounded-xl p-6 mb-8 text-left">
             <h3 className="font-medium mb-4 flex items-center gap-2">
@@ -78,7 +153,7 @@ export default function WalletCreated() {
                 "Your email/passkey was never transmitted",
                 "No linkage to other wallets you own",
                 "Balance cannot be associated with your identity",
-                "Recovery can be set up privately",
+                "Recovery key lets you restore wallet anywhere",
               ].map((item) => (
                 <li key={item} className="flex items-start gap-2 text-sm text-muted-foreground">
                   <Icon icon="ph:check-circle" className="w-4 h-4 text-success mt-0.5 flex-shrink-0" />

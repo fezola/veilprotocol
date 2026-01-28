@@ -1,14 +1,15 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Icon } from "@iconify/react";
 import { motion } from "framer-motion";
 import { PageLayout } from "@/components/layout/PageLayout";
 import { ZKProofVisualizer } from "@/components/ui/ZKProofVisualizer";
 import { generateAuthProof, deriveWalletAddress, ZKProofData } from "@/lib/zkProof";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth, RecoveryKeyData } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 
-type AuthMethod = "passkey" | "email" | null;
-type AuthStep = "method" | "email-input" | "verifying" | "creating";
+type AuthMethod = "passkey" | "email" | "import" | null;
+type AuthStep = "method" | "email-input" | "import-key" | "verifying" | "creating";
 type ProofStage = "idle" | "hashing" | "generating" | "verifying" | "complete";
 
 /**
@@ -32,15 +33,32 @@ function getOrCreateSecret(identifier: string): { secret: string; isReturning: b
   return { secret: newSecret, isReturning: false };
 }
 
+// Validate recovery key structure
+function isValidRecoveryKey(data: unknown): data is RecoveryKeyData {
+  if (!data || typeof data !== 'object') return false;
+  const obj = data as Record<string, unknown>;
+  return (
+    typeof obj.version === 'string' &&
+    typeof obj.secret === 'string' &&
+    typeof obj.identifier === 'string' &&
+    typeof obj.commitment === 'string' &&
+    typeof obj.wallet === 'string' &&
+    typeof obj.createdAt === 'number'
+  );
+}
+
 export default function Login() {
   const navigate = useNavigate();
-  const { login, isAuthenticated, veilWallet } = useAuth();
+  const { login, loginWithRecoveryKey, isAuthenticated, veilWallet } = useAuth();
+  const { toast } = useToast();
   const [method, setMethod] = useState<AuthMethod>(null);
   const [step, setStep] = useState<AuthStep>("method");
   const [email, setEmail] = useState("");
   const [proofStage, setProofStage] = useState<ProofStage>("idle");
   const [proof, setProof] = useState<ZKProofData | null>(null);
   const [proofDuration, setProofDuration] = useState<number>(0);
+  const [importError, setImportError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Redirect to dashboard if already authenticated (e.g., from recovery)
   useEffect(() => {
@@ -75,8 +93,8 @@ export default function Login() {
       // Store commitment for wallet derivation
       const walletAddress = await deriveWalletAddress(result.proof.commitment);
 
-      // Update auth context with persistence
-      login(walletAddress, result.proof.commitment, identifier);
+      // Update auth context with persistence - now includes secret for recovery!
+      login(walletAddress, result.proof.commitment, identifier, secret);
 
       await new Promise((resolve) => setTimeout(resolve, 1500));
 
@@ -84,6 +102,43 @@ export default function Login() {
     }
     return { success: false, isReturning: false };
   }, [login]);
+
+  // Handle recovery key file import
+  const handleFileImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setImportError(null);
+
+    try {
+      const text = await file.text();
+      const data = JSON.parse(text);
+
+      if (!isValidRecoveryKey(data)) {
+        setImportError("Invalid recovery key file format");
+        return;
+      }
+
+      // Attempt to login with recovery key
+      const success = loginWithRecoveryKey(data);
+      if (success) {
+        toast({
+          title: "Wallet Recovered!",
+          description: `Welcome back! Wallet ${data.wallet.slice(0, 8)}... restored.`,
+        });
+        navigate("/dashboard");
+      } else {
+        setImportError("Failed to restore wallet from recovery key");
+      }
+    } catch {
+      setImportError("Failed to parse recovery key file. Make sure it's a valid JSON file.");
+    }
+
+    // Reset file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
 
   const handlePasskeyAuth = async () => {
     setMethod("passkey");
@@ -138,12 +193,14 @@ export default function Login() {
               <h1 className="text-2xl font-bold mb-2">
                 {step === "method" && "Private Authentication"}
                 {step === "email-input" && "Enter Your Email"}
+                {step === "import-key" && "Import Recovery Key"}
                 {step === "verifying" && "Generating ZK Proof"}
                 {step === "creating" && "Creating Your Wallet"}
               </h1>
               <p className="text-muted-foreground text-sm">
                 {step === "method" && "No passwords stored. No identity revealed."}
                 {step === "email-input" && "We'll derive your wallet from a zero-knowledge proof of your email."}
+                {step === "import-key" && "Restore your wallet using your backup recovery key."}
                 {step === "verifying" && "Real cryptographic proof generation in progress..."}
                 {step === "creating" && "Deriving your private wallet address..."}
               </p>
@@ -183,11 +240,31 @@ export default function Login() {
                   <Icon icon="ph:arrow-right" className="w-5 h-5 text-muted-foreground ml-auto" />
                 </button>
 
+                {/* Recovery Key Import */}
+                <div className="pt-4 border-t border-border">
+                  <button
+                    onClick={() => {
+                      setMethod("import");
+                      setStep("import-key");
+                    }}
+                    className="w-full flex items-center gap-4 p-4 rounded-xl border border-success/30 bg-success/5 hover:bg-success/10 transition-colors"
+                  >
+                    <div className="w-12 h-12 rounded-lg bg-success/10 flex items-center justify-center">
+                      <Icon icon="ph:key" className="w-6 h-6 text-success" />
+                    </div>
+                    <div className="text-left">
+                      <p className="font-medium">Import Recovery Key</p>
+                      <p className="text-sm text-muted-foreground">Restore wallet from backup file</p>
+                    </div>
+                    <Icon icon="ph:arrow-right" className="w-5 h-5 text-muted-foreground ml-auto" />
+                  </button>
+                </div>
+
                 <div className="pt-4 border-t border-border">
                   <div className="flex items-start gap-3 p-3 rounded-lg bg-primary/5 border border-primary/10">
                     <Icon icon="ph:info" className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
                     <p className="text-xs text-muted-foreground">
-                      <span className="text-primary font-medium">Privacy Note:</span> Your authentication method is never stored. 
+                      <span className="text-primary font-medium">Privacy Note:</span> Your authentication method is never stored.
                       We only store a cryptographic commitment that cannot reveal your identity.
                     </p>
                   </div>
@@ -239,6 +316,65 @@ export default function Login() {
                   Back to options
                 </button>
               </form>
+            )}
+
+            {/* Recovery Key Import */}
+            {step === "import-key" && (
+              <div className="space-y-4">
+                <div className="text-center mb-4">
+                  <div className="w-16 h-16 rounded-full bg-success/10 flex items-center justify-center mx-auto mb-4">
+                    <Icon icon="ph:key" className="w-8 h-8 text-success" />
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Upload your recovery key file to restore your wallet. This is the JSON file you downloaded when creating your wallet.
+                  </p>
+                </div>
+
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".json"
+                  onChange={handleFileImport}
+                  className="hidden"
+                  id="recovery-file-input"
+                />
+
+                <label
+                  htmlFor="recovery-file-input"
+                  className="w-full py-4 border-2 border-dashed border-border rounded-xl flex flex-col items-center justify-center gap-2 cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors"
+                >
+                  <Icon icon="ph:upload-simple" className="w-8 h-8 text-muted-foreground" />
+                  <span className="text-sm font-medium">Click to upload recovery key</span>
+                  <span className="text-xs text-muted-foreground">veil-recovery-key-*.json</span>
+                </label>
+
+                {importError && (
+                  <div className="flex items-start gap-3 p-3 rounded-lg bg-destructive/10 border border-destructive/20">
+                    <Icon icon="ph:warning" className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
+                    <p className="text-xs text-destructive">{importError}</p>
+                  </div>
+                )}
+
+                <div className="flex items-start gap-3 p-3 rounded-lg bg-primary/5 border border-primary/10">
+                  <Icon icon="ph:info" className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+                  <p className="text-xs text-muted-foreground">
+                    <span className="text-primary font-medium">Don't have your recovery key?</span> If you used email login before,
+                    try logging in with the same email — your wallet will be restored if you're on the same browser.
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setStep("method");
+                    setMethod(null);
+                    setImportError(null);
+                  }}
+                  className="w-full py-3 text-muted-foreground hover:text-foreground transition-colors text-sm"
+                >
+                  Back to options
+                </button>
+              </div>
             )}
 
             {/* ZK Proof Generation Visualization */}

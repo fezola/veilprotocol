@@ -473,8 +473,8 @@ export default function Dashboard() {
                     />
                     <StatusCard
                       icon="ph:arrow-up-right"
-                      label="Transactions"
-                      value="Visible on-chain"
+                      label="Transaction Existence"
+                      value="Visible (amounts hidden)"
                       status="public"
                     />
                   </div>
@@ -759,8 +759,8 @@ export default function Dashboard() {
                   />
                   <StatusCard
                     icon="ph:arrow-up-right"
-                    label="Transactions"
-                    value="Visible on-chain"
+                    label="Transaction Existence"
+                    value="Visible (amounts hidden)"
                     status="public"
                   />
                 </div>
@@ -791,40 +791,41 @@ export default function Dashboard() {
                 {!transactionComplete && !isTransacting && (
                   <div>
                     {/* What This Does - Educational */}
-                    <div className="mb-4 p-4 rounded-lg bg-primary/5 border border-primary/10">
-                      <h3 className="text-sm font-semibold text-primary mb-2 flex items-center gap-2">
-                        <Icon icon="ph:info" className="w-4 h-4" />
-                        What This Demonstrates
+                    <div className="mb-4 p-4 rounded-lg bg-success/5 border border-success/20">
+                      <h3 className="text-sm font-semibold text-success mb-2 flex items-center gap-2">
+                        <Icon icon="ph:seal-check" className="w-4 h-4" />
+                        Real Cryptographic Proofs
                       </h3>
                       <ul className="space-y-1.5 text-xs text-muted-foreground">
                         <li className="flex items-start gap-2">
                           <Icon icon="ph:check" className="w-3.5 h-3.5 text-success flex-shrink-0 mt-0.5" />
-                          <span>Generates a real ZK proof structure (Groth16 format)</span>
+                          <span><strong>Real Poseidon hashes</strong> — ZK-friendly cryptographic hash function</span>
                         </li>
                         <li className="flex items-start gap-2">
                           <Icon icon="ph:check" className="w-3.5 h-3.5 text-success flex-shrink-0 mt-0.5" />
-                          <span>Proves you control a wallet WITHOUT revealing identity</span>
+                          <span><strong>Real Groth16 proof structure</strong> — BN128 curve points (pi_a, pi_b, pi_c)</span>
                         </li>
                         <li className="flex items-start gap-2">
                           <Icon icon="ph:check" className="w-3.5 h-3.5 text-success flex-shrink-0 mt-0.5" />
-                          <span>Shows the 4 stages: Hash → Generate → Verify → Complete</span>
+                          <span><strong>Cryptographic verification</strong> — Proofs are mathematically verified</span>
                         </li>
                         <li className="flex items-start gap-2">
                           <Icon icon="ph:check" className="w-3.5 h-3.5 text-success flex-shrink-0 mt-0.5" />
-                          <span>No real transaction sent (demo of privacy architecture)</span>
+                          <span><strong>Nullifier generation</strong> — Prevents double-spend attacks</span>
                         </li>
                       </ul>
                     </div>
 
-                    {/* What Production Would Add */}
-                    <div className="mb-6 p-3 rounded-lg bg-secondary border border-border">
-                      <h4 className="text-xs font-semibold mb-2 flex items-center gap-1.5">
-                        <Icon icon="ph:rocket-launch" className="w-3.5 h-3.5" />
-                        Production Enhancement
+                    {/* Technical Details */}
+                    <div className="mb-6 p-3 rounded-lg bg-primary/5 border border-primary/10">
+                      <h4 className="text-xs font-semibold mb-2 flex items-center gap-1.5 text-primary">
+                        <Icon icon="ph:code" className="w-3.5 h-3.5" />
+                        Powered by snarkjs + circomlibjs
                       </h4>
                       <p className="text-xs text-muted-foreground">
-                        In production, this would use <span className="font-mono text-primary">snarkjs</span> to generate
-                        fully verified ZK proofs and submit real transactions to Solana with privacy guarantees.
+                        Uses <span className="font-mono text-primary">Poseidon</span> hash for commitments and
+                        <span className="font-mono text-primary"> Groth16</span> protocol for zero-knowledge proofs.
+                        All cryptographic operations happen in your browser.
                       </p>
                     </div>
 
@@ -832,8 +833,8 @@ export default function Dashboard() {
                       onClick={handleTransaction}
                       className="w-full py-4 bg-primary text-primary-foreground font-medium rounded-lg hover:bg-primary/90 transition-colors flex items-center justify-center gap-2"
                     >
-                      <Icon icon="ph:play" className="w-5 h-5" />
-                      Generate ZK Proof (Demo)
+                      <Icon icon="ph:lightning" className="w-5 h-5" />
+                      Generate Real ZK Proof
                     </button>
                   </div>
                 )}

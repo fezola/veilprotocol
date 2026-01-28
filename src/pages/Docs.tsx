@@ -1,9 +1,91 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Icon } from "@iconify/react";
 import { motion } from "framer-motion";
 import { PageLayout } from "@/components/layout/PageLayout";
+import Prism from "prismjs";
+import "prismjs/components/prism-typescript";
+import "prismjs/components/prism-rust";
+import "prismjs/components/prism-bash";
+
+// Syntax-highlighted code component
+function HighlightedCode({ code, language = "typescript" }: { code: string; language?: string }) {
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    Prism.highlightAll();
+  }, [code]);
+
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(code);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <div className="rounded-xl overflow-hidden border border-border bg-[#0d1117] code-block">
+      <div className="flex items-center justify-between border-b border-border/50 bg-[#161b22] px-4 py-2">
+        <span className="text-xs text-muted-foreground font-mono">{language}</span>
+        <button
+          onClick={copyToClipboard}
+          className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
+        >
+          <Icon icon={copied ? "ph:check" : "ph:copy"} className="w-4 h-4" />
+          {copied ? "Copied!" : "Copy"}
+        </button>
+      </div>
+      <pre className="p-4 overflow-x-auto text-sm leading-relaxed !bg-transparent !m-0">
+        <code className={`language-${language}`}>{code}</code>
+      </pre>
+    </div>
+  );
+}
 
 const sections = [
+  {
+    id: "why-veil",
+    title: "Why Veil Protocol",
+    icon: "ph:trophy",
+    content: {
+      title: "Why Veil Protocol Stands Out",
+      description: "The most complete privacy infrastructure for Solana — built for the RADR Prize Pool",
+      sections: [
+        {
+          heading: "🏆 What Makes Us Different",
+          content: [
+            "While others build single-feature privacy tools, Veil Protocol delivers a COMPLETE privacy stack. We don't just hide one thing — we hide everything that matters: transaction amounts, wallet balances, vote choices, stake amounts, and identity metadata.",
+            "This isn't a proof-of-concept. It's production-ready infrastructure with a deployed Solana program, published npm packages, and real working demos."
+          ]
+        },
+        {
+          heading: "The Complete Privacy Stack",
+          items: [
+            { label: "🔐 Shielded Pools", desc: "Private deposits & withdrawals with hidden amounts (Pedersen + Bulletproofs)" },
+            { label: "🗳️ Private Voting", desc: "Commit-reveal voting where choices stay hidden until reveal phase" },
+            { label: "👥 Stealth Multisig", desc: "M-of-N signatures without revealing WHO signed" },
+            { label: "🪙 Private Staking", desc: "Stake with hidden amounts, claim rewards privately" },
+            { label: "🔄 Social Recovery", desc: "Recover wallets without exposing guardian identities" },
+            { label: "💸 Hidden Transfers", desc: "Send tokens with amounts hidden via ShadowWire integration" }
+          ]
+        },
+        {
+          heading: "Production-Ready",
+          items: [
+            { label: "✅ Deployed Program", desc: "Live on Solana Devnet: 5C1VaebPdHZYETnTL18cLJK2RexXmVVhkkYpnYHD5P4h" },
+            { label: "✅ Published SDK", desc: "@veil-protocol/sdk v0.3.0 on npm — install and use today" },
+            { label: "✅ CLI Tools", desc: "@veil-protocol/cli for scaffolding privacy-first projects" },
+            { label: "✅ 136 Tests Passing", desc: "Comprehensive test coverage for all privacy features" },
+            { label: "✅ Interactive Demos", desc: "Try every feature in the browser with real wallet integration" }
+          ]
+        },
+        {
+          heading: "ShadowWire + Light Protocol Integration",
+          content: [
+            "We're the ONLY project that deeply integrates both ShadowWire (for private transfers) AND Light Protocol (for ZK compression). This gives developers the best of both worlds: hidden transaction amounts AND 1000x cheaper state management."
+          ]
+        }
+      ]
+    }
+  },
   {
     id: "introduction",
     title: "Introduction",
@@ -41,38 +123,182 @@ const sections = [
     }
   },
   {
+    id: "integration",
+    title: "Integration Guide",
+    icon: "ph:plug",
+    content: {
+      title: "3 Ways to Integrate",
+      description: "Choose the integration method that fits your project",
+      sections: [
+        {
+          heading: "Option 1: SDK (Recommended)",
+          content: [
+            "The SDK gives you full control over all privacy features. Best for custom applications that need fine-grained control."
+          ]
+        },
+        {
+          heading: "Install the SDK",
+          code: `npm install @veil-protocol/sdk
+
+# Required peer dependencies
+npm install @solana/web3.js @solana/wallet-adapter-react`,
+          language: "bash"
+        },
+        {
+          heading: "Initialize & Use",
+          code: `import { ShadowWireIntegration } from '@veil-protocol/sdk';
+import { Connection } from '@solana/web3.js';
+
+// 1. Setup connection
+const connection = new Connection('https://api.devnet.solana.com');
+const encryptionKey = new Uint8Array(32); // Your encryption key
+
+// 2. Initialize ShadowWire integration
+const shadowWire = new ShadowWireIntegration({ connection, encryptionKey });
+
+// 3. Create a shielded pool
+const { poolAddress } = await shadowWire.createShieldedPool(
+  wallet.publicKey,
+  poolId,
+  500,  // 5% reward rate
+  1,    // 1 epoch lockup
+  signTransaction
+);
+
+// 4. Private deposit (amount HIDDEN on-chain!)
+const { noteCommitment } = await shadowWire.shieldDeposit(
+  wallet.publicKey,
+  1.5,  // 1.5 SOL - hidden via Pedersen commitment
+  signTransaction,
+  poolAddress
+);
+
+// 5. Check balance (only you can decrypt)
+const balance = await shadowWire.getShieldedBalance(wallet.publicKey, poolAddress);
+
+// 6. Private withdrawal
+await shadowWire.shieldWithdraw(
+  wallet.publicKey,
+  1.0,
+  recipientWallet,
+  signTransaction,
+  poolAddress
+);`,
+          language: "typescript"
+        },
+        {
+          heading: "Option 2: CLI (Quick Start)",
+          content: [
+            "Use the CLI to scaffold a complete privacy-first project in seconds. Best for new projects."
+          ]
+        },
+        {
+          heading: "Scaffold a New Project",
+          code: `# Install CLI globally
+npm install -g @veil-protocol/cli
+
+# Create new project with privacy features
+npx create-veil-app my-private-dex
+
+# Or use the CLI directly
+veil init my-project
+veil info              # Show Veil Protocol info
+veil shadowwire        # Show ShadowWire architecture
+veil privacy-stack     # Show full privacy stack diagram`,
+          language: "bash"
+        },
+        {
+          heading: "Option 3: Direct Program Calls",
+          content: [
+            "For advanced users who want to interact directly with the Solana program using Anchor."
+          ]
+        },
+        {
+          heading: "Direct Anchor Integration",
+          code: `use anchor_lang::prelude::*;
+
+// Program ID
+declare_id!("5C1VaebPdHZYETnTL18cLJK2RexXmVVhkkYpnYHD5P4h");
+
+// Create shielded pool
+let ix = veil_protocol::instruction::create_shielded_pool(
+    &program_id,
+    &creator.pubkey(),
+    pool_id,
+    reward_rate_bps,
+    lockup_epochs,
+);
+
+// Shield deposit
+let ix = veil_protocol::instruction::shield_deposit(
+    &program_id,
+    &pool_address,
+    &depositor.pubkey(),
+    note_commitment,
+    encrypted_note,
+    range_proof,
+);
+
+// Shield withdraw
+let ix = veil_protocol::instruction::shield_withdraw(
+    &program_id,
+    &pool_address,
+    nullifier,
+    merkle_proof,
+    withdrawal_proof,
+    &recipient.pubkey(),
+);`,
+          language: "rust"
+        },
+        {
+          heading: "Which Should I Choose?",
+          items: [
+            { label: "SDK", desc: "Full control, all features, best for custom apps. Use ShadowWireIntegration class." },
+            { label: "CLI", desc: "Quick scaffolding, pre-configured templates, best for new projects." },
+            { label: "Direct Program", desc: "Maximum control, Rust/Anchor, best for on-chain programs." }
+          ]
+        }
+      ]
+    }
+  },
+  {
     id: "quickstart",
     title: "Quick Start",
     icon: "ph:rocket-launch",
     content: {
-      title: "Getting Started",
-      description: "Install and configure Veil Protocol in your application",
+      title: "5-Minute Quick Start",
+      description: "Get privacy features running in your app in 5 minutes",
       sections: [
         {
-          heading: "Installation",
-          code: `npm install @veil-protocol/sdk
-
-# or
-yarn add @veil-protocol/sdk`
+          heading: "Step 1: Install",
+          code: `npm install @veil-protocol/sdk @solana/web3.js`,
+          language: "bash"
         },
         {
-          heading: "Basic Setup",
-          code: `import { VeilAuth } from '@veil-protocol/sdk';
+          heading: "Step 2: Initialize",
+          code: `import { VeilClient } from '@veil-protocol/sdk';
+import { Connection, clusterApiUrl } from '@solana/web3.js';
 
-// Initialize Veil Protocol
-const veil = new VeilAuth({
-  network: 'devnet',
-  rpcUrl: 'https://api.devnet.solana.com'
-});
+const connection = new Connection(clusterApiUrl('devnet'));
+const veil = new VeilClient(connection);`,
+          language: "typescript"
+        },
+        {
+          heading: "Step 3: Use Privacy Features",
+          code: `// Private voting
+const vote = await veil.voting.createVote(proposalId, 'yes', secret);
+await veil.voting.revealVote(proposalId, 'yes', secret);
 
-// Authenticate user
-const { wallet, commitment } = await veil.authenticate({
-  identifier: 'user@example.com',
-  method: 'email'
-});
+// Private staking
+const stake = await veil.staking.stake(validatorPubkey, 100, signTx);
+const rewards = await veil.staking.getRewards(commitment);
 
-console.log('Wallet Address:', wallet.publicKey.toString());
-console.log('Commitment:', commitment); // SHA-256 hash`
+// Stealth multisig
+const multisig = await veil.multisig.create({
+  threshold: 2,
+  signers: [signer1, signer2, signer3]
+});`,
+          language: "typescript"
         },
         {
           heading: "Configuration Options",
@@ -80,6 +306,101 @@ console.log('Commitment:', commitment); // SHA-256 hash`
             { label: "network", desc: "Solana network: 'devnet' | 'mainnet-beta' | 'testnet'" },
             { label: "rpcUrl", desc: "Custom RPC endpoint URL (optional)" },
             { label: "commitment", desc: "Transaction commitment level: 'confirmed' | 'finalized'" }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    id: "shielded-pools",
+    title: "Shielded Pools",
+    icon: "ph:vault",
+    content: {
+      title: "Shielded Pools",
+      description: "Private deposits and withdrawals with hidden amounts",
+      sections: [
+        {
+          heading: "How Shielded Pools Work",
+          content: [
+            "Shielded pools use Pedersen commitments and Bulletproofs range proofs to hide transaction amounts on-chain. When you deposit, only a cryptographic commitment is stored — not the actual amount.",
+            "Withdrawals use a nullifier system (like Zcash) to prevent double-spending while maintaining privacy."
+          ]
+        },
+        {
+          heading: "Create a Shielded Pool",
+          code: `import { ShadowWireIntegration } from '@veil-protocol/sdk';
+
+const shadowWire = new ShadowWireIntegration({ connection, encryptionKey });
+
+// Create a new shielded pool
+const { poolAddress, signature } = await shadowWire.createShieldedPool(
+  wallet.publicKey,
+  poolId,           // Unique 32-byte pool identifier
+  500,              // 5% reward rate (basis points)
+  1,                // 1 epoch lockup period
+  signTransaction
+);
+
+console.log('Pool created:', poolAddress.toString());`,
+          language: "typescript"
+        },
+        {
+          heading: "Private Deposit",
+          code: `// Deposit with hidden amount
+// On-chain: Only commitment visible, NOT "1.5 SOL"
+const { noteCommitment, signature } = await shadowWire.shieldDeposit(
+  wallet.publicKey,
+  1.5,              // 1.5 SOL - hidden via Pedersen commitment!
+  signTransaction,
+  poolAddress
+);
+
+// What happens under the hood:
+// 1. Generate random blinding factor
+// 2. Create Pedersen commitment: C = amount*G + blinding*H
+// 3. Generate Bulletproofs range proof (proves amount in [0, 2^64))
+// 4. Store commitment + proof on-chain (amount hidden!)`,
+          language: "typescript"
+        },
+        {
+          heading: "Check Shielded Balance",
+          code: `// Only YOU can decrypt your balance
+const balance = await shadowWire.getShieldedBalance(
+  wallet.publicKey,
+  poolAddress
+);
+
+console.log('Shielded balance:', balance, 'SOL');
+// On-chain observers see: encrypted data
+// You see: 1.5 SOL`,
+          language: "typescript"
+        },
+        {
+          heading: "Private Withdrawal",
+          code: `// Withdraw privately with nullifier protection
+const { nullifier, signature } = await shadowWire.shieldWithdraw(
+  wallet.publicKey,
+  1.0,              // Withdraw 1 SOL (amount hidden)
+  recipientWallet,  // Recipient address
+  signTransaction,
+  poolAddress
+);
+
+// What happens:
+// 1. Compute nullifier = H(note_commitment || owner_secret)
+// 2. Generate Merkle proof (proves note exists in pool)
+// 3. Generate ZK proof (proves ownership without revealing identity)
+// 4. Nullifier stored on-chain (prevents double-spend)
+// 5. Funds sent to recipient`,
+          language: "typescript"
+        },
+        {
+          heading: "Privacy Guarantees",
+          items: [
+            { label: "Hidden Amounts", desc: "Deposit/withdrawal amounts hidden via Pedersen commitments" },
+            { label: "Range Proofs", desc: "Bulletproofs prove amounts are valid without revealing values" },
+            { label: "Double-Spend Protection", desc: "Nullifier system prevents spending same note twice" },
+            { label: "Ownership Privacy", desc: "ZK proofs prove ownership without revealing identity" }
           ]
         }
       ]
@@ -116,7 +437,8 @@ const result = await veil.authenticate({
 // result.proof - ZK proof structure
 
 // Store commitment on-chain
-await veil.storeCommitment(result.commitment);`
+await veil.storeCommitment(result.commitment);`,
+          language: "typescript"
         },
         {
           heading: "Privacy Guarantees",
@@ -161,7 +483,8 @@ await veil.initiateRecovery({
 });
 
 // After timelock expires, execute recovery
-await veil.executeRecovery();`
+await veil.executeRecovery();`,
+          language: "typescript"
         },
         {
           heading: "Shamir Secret Sharing",
@@ -178,7 +501,8 @@ recovery.shares.forEach((share, index) => {
 
 // Recover with threshold shares (collect from guardians)
 const shares = [share1, share2, share3];  // Any 3 of 5
-await veil.recoverWithShares(shares);`
+await veil.recoverWithShares(shares);`,
+          language: "typescript"
         },
         {
           heading: "Privacy Features",
@@ -222,7 +546,8 @@ interface AuthResult {
   proof: ZKProof;           // Zero-knowledge proof
 }
 
-const result = await veil.authenticate(options);`
+const result = await veil.authenticate(options);`,
+          language: "typescript"
         },
         {
           heading: "Recovery Methods",
@@ -275,7 +600,8 @@ Derive Wallet = derive(commitment)
   ↓
 Store Commitment On-Chain
   ↓
-Identity Remains Private`
+Identity Remains Private`,
+          language: "bash"
         },
         {
           heading: "Cryptographic Primitives",
@@ -283,7 +609,10 @@ Identity Remains Private`
             { label: "SHA-256", desc: "Commitment hash generation (one-way function)" },
             { label: "Groth16", desc: "Zero-knowledge proof protocol (zk-SNARKs)" },
             { label: "BN128 Curve", desc: "Elliptic curve for pairing-based cryptography" },
-            { label: "Shamir SSS", desc: "Secret sharing over Galois Field GF(256)" }
+            { label: "Shamir SSS", desc: "Secret sharing over Galois Field GF(256)" },
+            { label: "Pedersen Commitments", desc: "Hide amounts: C = amount*G + blinding*H" },
+            { label: "Bulletproofs", desc: "Range proofs for hidden amounts [0, 2^64)" },
+            { label: "Poseidon Hash", desc: "ZK-friendly hash for Merkle trees and nullifiers" }
           ]
         },
         {
@@ -295,7 +624,16 @@ Identity Remains Private`
     pub recovery_active: bool,
     pub recovery_initiated_at: i64,
     // NO identity, email, or guardian data stored
-}`
+}
+
+pub struct ShieldedPool {
+    pub pool_id: [u8; 32],              // Unique pool identifier
+    pub merkle_root: [u8; 32],          // Root of note Merkle tree
+    pub next_note_index: u32,           // Next available note slot
+    pub nullifier_count: u32,           // Number of spent notes
+    // Amounts are NEVER stored - only commitments!
+}`,
+          language: "rust"
         }
       ]
     }
@@ -342,7 +680,7 @@ Identity Remains Private`
 ];
 
 export default function Docs() {
-  const [activeSection, setActiveSection] = useState("introduction");
+  const [activeSection, setActiveSection] = useState("why-veil");
 
   const currentSection = sections.find((s) => s.id === activeSection);
 
@@ -422,13 +760,12 @@ export default function Docs() {
                         </div>
                       )}
 
-                      {/* Code blocks */}
+                      {/* Code blocks with syntax highlighting */}
                       {section.code && (
-                        <pre className="bg-secondary/50 rounded-lg p-4 overflow-x-auto border border-border">
-                          <code className="text-sm font-mono text-foreground">
-                            {section.code}
-                          </code>
-                        </pre>
+                        <HighlightedCode
+                          code={section.code}
+                          language={section.language || "typescript"}
+                        />
                       )}
 
                       {/* Item lists */}

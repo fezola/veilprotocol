@@ -12,6 +12,11 @@ dist
 dist-ssr
 *.local
 
+# Environment files (keep .env.example for reference)
+.env
+.env.local
+.env.*.local
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -26,3 +31,18 @@ dist-ssr
 # Rust build artifacts
 target/
 **/target/
+
+# Lock files (use package-lock.json only)
+bun.lockb
+
+# CLI test apps (generated during development)
+veil-cli/my-veil-app/
+veil-cli/test-app/
+
+# Nested node_modules and dist (packages handle their own)
+cli/node_modules/
+cli/dist/
+veil-cli/node_modules/
+veil-cli/dist/
+packages/*/node_modules/
+packages/*/dist/
