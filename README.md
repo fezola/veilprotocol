@@ -1,45 +1,130 @@
 # Veil Protocol
 
-**Privacy-preserving wallet infrastructure for Solana**
+Privacy-preserving wallet infrastructure for Solana.
 
 ## Overview
 
-Veil Protocol provides a comprehensive privacy layer for Solana applications, enabling:
+Veil Protocol provides a comprehensive privacy layer for Solana applications:
 
-- 🔐 **Private Identity** - Zero-knowledge proof-based wallet identity
-- 🔄 **Social Recovery** - Time-locked recovery without exposing guardians
-- 🗳️ **Private Voting** - Commit-reveal scheme for anonymous governance
-- 👥 **Stealth Multisig** - Hidden signer identities with threshold signatures
-- 💸 **Shielded Payments** - Private transfers via ShadowWire integration
-- 🪙 **Private Staking** - Stake with hidden amounts using Pedersen commitments
+- **Private Identity** - Zero-knowledge proof-based wallet identity
+- **Social Recovery** - Time-locked recovery without exposing guardians
+- **Private Voting** - Commit-reveal scheme for anonymous governance
+- **Stealth Multisig** - Hidden signer identities with threshold signatures
+- **Shielded Payments** - Private transfers via ShadowWire integration
+- **Private Staking** - Stake with hidden amounts using Pedersen commitments
+- **Confidential Transfers** - SPL Token-2022 confidential balances and transfers
+- **Institutional Compliance** - Audit keys, ZK-KYC for regulated entities
+- **Anonymous Ramps** - P2P on/off ramps with stealth addresses
 
 ## Privacy Capabilities
 
-### What Aegis Shield Protects
+### Protected
 
-> **Full privacy stack** powered by ShadowWire + Light Protocol integration.
+The following data is protected through ShadowWire and Light Protocol integration:
 
-- ✅ **Transaction amounts** - Hidden via Pedersen commitments and Bulletproofs range proofs
-- ✅ **Wallet balances** - Shielded pools hide your holdings from public view
-- ✅ **Identity linkage** - Prevents correlation between actions and real identity
-- ✅ **Access flows** - Hides who approved what in multisig/voting
-- ✅ **Recovery logic** - Guardians remain anonymous during social recovery
-- ✅ **Stake amounts** - Hides how much you've staked (via Pedersen commitments)
-- ✅ **Vote choices** - Your governance votes stay private until reveal phase
-- ✅ **Token holdings** - Compressed tokens via Light Protocol hide balances
+- **Transaction amounts** - Hidden via Pedersen commitments and Bulletproofs range proofs
+- **Wallet balances** - Shielded pools hide holdings from public view
+- **Identity linkage** - Prevents correlation between actions and real identity
+- **Access flows** - Hides who approved what in multisig/voting
+- **Recovery logic** - Guardians remain anonymous during social recovery
+- **Stake amounts** - Hidden via Pedersen commitments
+- **Vote choices** - Governance votes stay private until reveal phase
+- **Token holdings** - Compressed tokens via Light Protocol hide balances
 
-### What Remains Visible
+### Visible
 
-> **Honesty builds trust.** We're clear about what this system is — and isn't.
+For transparency, the following remains visible on-chain:
 
-- ⚠️ **Transaction existence** - Transactions are visible on Solana explorer (but amounts hidden)
-- ⚠️ **Program interactions** - Which programs you interact with is visible
-- ⚠️ **Wallet addresses** - Your public key is still visible (use stealth addresses for recipient privacy)
-- ⚠️ **Compliance** - Identity can be revealed if legally required
+- **Transaction existence** - Transactions are visible on Solana explorer (amounts hidden)
+- **Program interactions** - Which programs you interact with is visible
+- **Wallet addresses** - Public keys are visible (use stealth addresses for recipient privacy)
+- **Compliance** - Identity can be revealed if legally required
 
-### Philosophy
+### Design Philosophy
 
-Aegis Shield is **comprehensive privacy infrastructure** for Solana. We protect transaction amounts, wallet balances, and identity metadata — the things that make users vulnerable to front-running, targeted attacks, and surveillance.
+Veil Protocol is comprehensive privacy infrastructure for Solana. It protects transaction amounts, wallet balances, and identity metadata to prevent front-running, targeted attacks, and surveillance.
+
+## Institutional Privacy
+
+Privacy features designed for regulated environments and enterprise use cases.
+
+### Confidential Transfers (SPL Token-2022)
+
+Native Solana confidential balances and transfers using the Token-2022 extension:
+
+```typescript
+import { ConfidentialTransferClient } from '@veil-protocol/sdk/confidential';
+
+const client = new ConfidentialTransferClient(connection);
+
+// Configure account for confidential transfers
+await client.configureAccount(mint, owner, signTransaction);
+
+// Deposit to confidential balance (public -> encrypted)
+await client.deposit(mint, BigInt(1000000), signTransaction);
+
+// Confidential transfer (amount hidden on-chain)
+await client.transfer(mint, BigInt(500000), recipientElGamalPubkey, recipientAccount, signTransaction);
+
+// Add audit key for regulatory compliance
+await client.addAuditKey(regulatorPubkey, 'balances');
+```
+
+### Audit Keys & ZK-KYC
+
+Institutional compliance without sacrificing user privacy:
+
+```typescript
+import { ComplianceClient } from '@veil-protocol/sdk/compliance';
+
+const compliance = new ComplianceClient(connection);
+
+// Add audit key for regulator (they can decrypt balances)
+await compliance.addAuditKey(regulatorPubkey, {
+  scope: 'balances',
+  expiresAt: Date.now() + 365 * 24 * 60 * 60 * 1000, // 1 year
+  jurisdictions: ['US', 'EU'],
+});
+
+// Store KYC claim (private, never revealed directly)
+await compliance.storeKYCClaim({
+  type: 'accredited_investor',
+  value: true,
+  issuer: kycProviderPubkey,
+});
+
+// Generate ZK proof of compliance (proves without revealing)
+const { proof } = await compliance.generateKYCProof(
+  ['accredited_investor', 'not_sanctioned'],
+  { jurisdiction: 'US' }
+);
+```
+
+### Anonymous On/Off Ramps
+
+P2P fiat ramps with privacy preservation:
+
+```typescript
+import { RampClient } from '@veil-protocol/sdk/ramps';
+
+const ramps = new RampClient(connection);
+
+// Create stealth deposit address (anonymous on-ramp)
+const { stealthAddress, depositInfo } = await ramps.createStealthDeposit();
+// Share depositInfo with sender - they can't link it to your identity
+
+// Create P2P sell order (off-ramp)
+await ramps.createSellOrder({
+  amount: 100,
+  mint: USDC_MINT,
+  fiatCurrency: 'USD',
+  minPrice: 0.99,
+  paymentMethods: ['bank_transfer', 'venmo'],
+});
+
+// Match with buyer and complete trade via escrow
+await ramps.matchOrder(orderId, signTransaction);
+```
 
 ## npm Packages
 
@@ -68,18 +153,18 @@ npx create-veil-app my-app
 
 ---
 
-## Network Configuration (Devnet ↔ Mainnet)
+## Network Configuration
 
-Aegis Shield supports both **Solana Devnet** (for development/testing) and **Mainnet-beta** (for production).
+Veil Protocol supports both Solana Devnet (development/testing) and Mainnet-beta (production).
 
 ### Quick Reference
 
 | Environment | When to Use | SOL Cost | ShadowPay Privacy |
 |-------------|-------------|----------|-------------------|
-| **Devnet** | Development, testing, hackathons | Free (faucet) | ⚠️ Amounts visible |
-| **Mainnet** | Production, real transactions | Real SOL | ✅ Full amount hiding |
+| Devnet | Development, testing, hackathons | Free (faucet) | Amounts visible |
+| Mainnet | Production, real transactions | Real SOL | Full amount hiding |
 
-> **Important:** ShadowWire's privacy features (Pedersen commitments, amount hiding) only work on **mainnet**. Devnet is for testing the transaction flow - amounts will be visible on Solscan.
+**Note:** ShadowWire's privacy features (Pedersen commitments, amount hiding) only work on mainnet. Devnet is for testing the transaction flow. Amounts will be visible on Solscan.
 
 ### For Developers: Configure Your Network
 
@@ -109,7 +194,7 @@ solana airdrop 2 --url devnet
 **Step 3: Configure Your Wallet**
 
 1. Open Phantom/Solflare wallet
-2. Go to Settings → Developer Settings
+2. Go to Settings > Developer Settings
 3. Enable "Testnet Mode" or change network to "Devnet"
 4. Your wallet address stays the same, but uses devnet SOL
 
@@ -126,7 +211,7 @@ VITE_HELIUS_RPC_URL=https://mainnet.helius-rpc.com/?api-key=YOUR_KEY
 npm run dev
 
 # 3. Switch wallet to Mainnet
-# (Phantom: Settings → Developer Settings → Testnet Mode OFF)
+# (Phantom: Settings > Developer Settings > Testnet Mode OFF)
 ```
 
 ### CLI: Specify Network During Init
@@ -178,17 +263,17 @@ export default defineVeilConfig({
 - [ ] Test all transactions with small amounts first
 - [ ] Update any hardcoded program IDs if needed
 
-> ⚠️ **Important:** Devnet and Mainnet are completely separate networks. Devnet SOL has no value and cannot be used on Mainnet.
+**Note:** Devnet and Mainnet are completely separate networks. Devnet SOL has no value and cannot be used on Mainnet.
 
 ---
 
 ## Features
 
-### 🔐 Private Identity (ZK Auth)
+### Private Identity (ZK Auth)
 
 Replace seed phrases with social login while maintaining self-custody.
 
-- **Email/Social → Wallet**: Derive wallet keys from OAuth without exposing identity
+- **Email/Social to Wallet**: Derive wallet keys from OAuth without exposing identity
 - **ZK Proof Authentication**: Prove you own an identity without revealing it
 - **Commitment-based**: Store identity commitments on-chain, not plaintext
 
@@ -198,7 +283,7 @@ const commitment = await generateIdentityCommitment(email, secret);
 await initializeCommitment(wallet, commitment);
 ```
 
-### 🔄 Social Recovery
+### Social Recovery
 
 Recover your wallet without exposing your guardians.
 
@@ -214,7 +299,7 @@ await initiateRecovery(wallet, identityPDA, newOwnerPubkey);
 await executeRecovery(wallet, identityPDA);
 ```
 
-### 🗳️ Private Voting
+### Private Voting
 
 DAO governance without vote buying or coercion.
 
@@ -232,7 +317,7 @@ await castVote(wallet, proposalPDA, commitment);
 await revealVote(wallet, proposalPDA, true, secret);
 ```
 
-### 👥 Stealth Multisig
+### Stealth Multisig
 
 Multi-signature wallets where signers remain anonymous.
 
@@ -249,7 +334,7 @@ await createMultisig(wallet, vaultId, 2, signerCommitments);
 await stealthSign(wallet, proposalPDA, signerProof);
 ```
 
-### 🪙 Private Staking
+### Private Staking
 
 Stake SOL with hidden amounts.
 
@@ -266,15 +351,15 @@ const { commitment, secret } = await stakePrivate(wallet, validatorPubkey, 100);
 await claimStakingRewards(wallet, stakePoolPDA, commitment, secret);
 ```
 
-### 💸 Shielded Payments (via ShadowWire)
+### Shielded Payments
 
-Private token transfers with hidden amounts.
+Private token transfers with hidden amounts via ShadowWire.
 
 - **Amount Hiding**: Transfer amounts hidden via Pedersen commitments
 - **Multi-token**: Works with SOL, USDC, and SPL tokens
 - **Recipient Privacy**: Optional stealth addresses for recipients
 
-### 🏦 Shielded Pools (Private Deposit/Withdrawal)
+### Shielded Pools
 
 Create and manage privacy pools for shielded transactions.
 
@@ -326,7 +411,7 @@ Veil Protocol extends [ShadowWire](https://shadowwire.xyz) (by RADR) to provide 
 
 ### ShadowWire ZK Proof Architecture
 
-ShadowWire uses a client → backend → on-chain flow for private transfers:
+ShadowWire uses a client-to-backend-to-on-chain flow for private transfers:
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
@@ -457,8 +542,8 @@ Veil Protocol uses [Light Protocol](https://lightprotocol.com) for ZK-compressed
 │                                                                          │
 │  PRIVACY POOLS (Shielded Deposits/Withdrawals)                          │
 │  ─────────────────────────────────────────────                          │
-│  • User deposits → creates compressed UTXO in state tree                │
-│  • Withdrawal → nullifier prevents double-spend, new UTXO created       │
+│  • User deposits: creates compressed UTXO in state tree                 │
+│  • Withdrawal: nullifier prevents double-spend, new UTXO created        │
 │  • Merkle proof verifies inclusion without revealing position           │
 │                                                                          │
 │  COMPRESSED TOKENS                                                       │
@@ -650,7 +735,7 @@ aegis-shield/
 ## Technologies
 
 ### Core Stack
-- **Blockchain:** Solana (Devnet → Mainnet ready)
+- **Blockchain:** Solana (Devnet and Mainnet ready)
 - **Smart Contracts:** Anchor Framework 0.32.1
 - **Frontend:** React + Vite + TypeScript
 - **Styling:** Tailwind CSS + shadcn/ui

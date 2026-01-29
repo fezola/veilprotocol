@@ -15,8 +15,11 @@ import { GamingDemoModal } from "@/components/demos/GamingDemoModal";
 import { ShadowPayDemoModal } from "@/components/demos/ShadowPayDemoModal";
 import { StakingDemoModal } from "@/components/demos/StakingDemoModal";
 import { ShieldedPoolDemoModal } from "@/components/demos/ShieldedPoolDemoModal";
+import { ConfidentialTransferDemoModal } from "@/components/demos/ConfidentialTransferDemoModal";
+import { ComplianceDemoModal } from "@/components/demos/ComplianceDemoModal";
+import { RampsDemoModal } from "@/components/demos/RampsDemoModal";
 
-type DemoCategory = "identity" | "defi" | "dao" | "wallet" | "gaming" | "shadowpay" | "staking" | "shieldedpool";
+type DemoCategory = "identity" | "defi" | "dao" | "wallet" | "gaming" | "shadowpay" | "staking" | "shieldedpool" | "confidential" | "compliance" | "ramps";
 
 interface DemoStep {
   title: string;
@@ -46,6 +49,9 @@ export default function Demo() {
   const [shadowpayModalOpen, setShadowpayModalOpen] = useState(false);
   const [stakingModalOpen, setStakingModalOpen] = useState(false);
   const [shieldedpoolModalOpen, setShieldedpoolModalOpen] = useState(false);
+  const [confidentialModalOpen, setConfidentialModalOpen] = useState(false);
+  const [complianceModalOpen, setComplianceModalOpen] = useState(false);
+  const [rampsModalOpen, setRampsModalOpen] = useState(false);
 
   // Demo scenarios
   const demoScenarios = {
@@ -301,6 +307,102 @@ export default function Demo() {
           title: "Withdraw with nullifier",
           description: "Spend note using nullifier (prevents double-spend) + ZK proof.",
           icon: "ph:arrow-up",
+          status: "pending" as const
+        }
+      ]
+    },
+    confidential: {
+      title: "Confidential Transfers",
+      subtitle: "SPL Token-2022 hidden amounts",
+      icon: "ph:lock",
+      color: "primary",
+      steps: [
+        {
+          title: "Generate ElGamal keypair",
+          description: "Create encryption keys for confidential balances.",
+          icon: "ph:key",
+          status: "pending" as const
+        },
+        {
+          title: "Configure account",
+          description: "Enable confidential transfers on token account.",
+          icon: "ph:gear",
+          status: "pending" as const
+        },
+        {
+          title: "Deposit to confidential balance",
+          description: "Encrypt balance with ElGamal encryption.",
+          icon: "ph:arrow-down",
+          status: "pending" as const
+        },
+        {
+          title: "Transfer with hidden amount",
+          description: "Send tokens with ZK range proof. Amount invisible to public.",
+          icon: "ph:check-circle",
+          status: "pending" as const
+        }
+      ]
+    },
+    compliance: {
+      title: "ZK-KYC Compliance",
+      subtitle: "Privacy-preserving regulation",
+      icon: "ph:buildings",
+      color: "warning",
+      steps: [
+        {
+          title: "Add audit key",
+          description: "Register regulator's decryption key with jurisdiction scope.",
+          icon: "ph:key",
+          status: "pending" as const
+        },
+        {
+          title: "Store KYC claim",
+          description: "Encrypt identity claims off-chain.",
+          icon: "ph:user-circle",
+          status: "pending" as const
+        },
+        {
+          title: "Generate ZK-KYC proof",
+          description: "Prove compliance without revealing personal data.",
+          icon: "ph:shield-check",
+          status: "pending" as const
+        },
+        {
+          title: "Create attestation",
+          description: "Issue on-chain compliance attestation.",
+          icon: "ph:check-circle",
+          status: "pending" as const
+        }
+      ]
+    },
+    ramps: {
+      title: "Anonymous Ramps",
+      subtitle: "Private fiat on/off ramps",
+      icon: "ph:bank",
+      color: "success",
+      steps: [
+        {
+          title: "Create stealth address",
+          description: "Generate one-time DKSAP deposit address.",
+          icon: "ph:eye-slash",
+          status: "pending" as const
+        },
+        {
+          title: "Create P2P order",
+          description: "List crypto for sale with privacy.",
+          icon: "ph:list-plus",
+          status: "pending" as const
+        },
+        {
+          title: "Match with buyer",
+          description: "Funds locked in trustless escrow.",
+          icon: "ph:handshake",
+          status: "pending" as const
+        },
+        {
+          title: "Complete trade",
+          description: "Release crypto after fiat confirmation.",
+          icon: "ph:check-circle",
           status: "pending" as const
         }
       ]
@@ -805,6 +907,12 @@ export default function Demo() {
                       setStakingModalOpen(true);
                     } else if (key === "shieldedpool") {
                       setShieldedpoolModalOpen(true);
+                    } else if (key === "confidential") {
+                      setConfidentialModalOpen(true);
+                    } else if (key === "compliance") {
+                      setComplianceModalOpen(true);
+                    } else if (key === "ramps") {
+                      setRampsModalOpen(true);
                     }
                   }}
                   className="glass-panel rounded-xl p-6 text-left hover:border-primary/40 transition-all group"
@@ -1150,6 +1258,18 @@ export default function Demo() {
       <ShieldedPoolDemoModal
         isOpen={shieldedpoolModalOpen}
         onClose={() => setShieldedpoolModalOpen(false)}
+      />
+      <ConfidentialTransferDemoModal
+        isOpen={confidentialModalOpen}
+        onClose={() => setConfidentialModalOpen(false)}
+      />
+      <ComplianceDemoModal
+        isOpen={complianceModalOpen}
+        onClose={() => setComplianceModalOpen(false)}
+      />
+      <RampsDemoModal
+        isOpen={rampsModalOpen}
+        onClose={() => setRampsModalOpen(false)}
       />
     </PageLayout>
   );

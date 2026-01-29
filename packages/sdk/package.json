@@ -1,7 +1,7 @@
 {
   "name": "@veil-protocol/sdk",
-  "version": "0.3.0",
-  "description": "Complete privacy infrastructure SDK for Solana - Identity, shielded balances, private voting, stealth multisig, private staking",
+  "version": "0.4.0",
+  "description": "Complete privacy infrastructure SDK for Solana - Identity, shielded balances, private voting, stealth multisig, private staking, confidential transfers, ZK-KYC compliance, anonymous ramps",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
@@ -60,6 +60,21 @@
       "types": "./dist/staking/index.d.ts",
       "import": "./dist/staking/index.mjs",
       "require": "./dist/staking/index.js"
+    },
+    "./confidential": {
+      "types": "./dist/confidential/index.d.ts",
+      "import": "./dist/confidential/index.mjs",
+      "require": "./dist/confidential/index.js"
+    },
+    "./compliance": {
+      "types": "./dist/compliance/index.d.ts",
+      "import": "./dist/compliance/index.mjs",
+      "require": "./dist/compliance/index.js"
+    },
+    "./ramps": {
+      "types": "./dist/ramps/index.d.ts",
+      "import": "./dist/ramps/index.mjs",
+      "require": "./dist/ramps/index.js"
     }
   },
   "scripts": {
@@ -76,7 +91,14 @@
     "shielded",
     "confidential",
     "wallet",
-    "defi"
+    "defi",
+    "spl-token-2022",
+    "institutional",
+    "compliance",
+    "kyc",
+    "audit",
+    "ramps",
+    "stealth-address"
   ],
   "author": "Veil Protocol",
   "license": "MIT",

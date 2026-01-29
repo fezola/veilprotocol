@@ -18,6 +18,9 @@ npm install @veil-protocol/sdk @solana/web3.js
 | **Transfer** | Private transactions | Commitment schemes |
 | **DEX** | Dark pool swaps | Order book privacy |
 | **Tokens** | Confidential token balances | Balance encryption |
+| **Confidential** | SPL Token-2022 confidential transfers | ElGamal encryption |
+| **Compliance** | Audit keys, ZK-KYC for institutions | Selective disclosure |
+| **Ramps** | Anonymous on/off ramps | Stealth addresses |
 
 ## Quick Start
 
@@ -55,6 +58,11 @@ import { RecoveryManager } from '@veil-protocol/sdk/recovery';
 import { PrivateTransfer } from '@veil-protocol/sdk/transfer';
 import { DarkPool } from '@veil-protocol/sdk/dex';
 import { ConfidentialToken } from '@veil-protocol/sdk/tokens';
+
+// NEW: Institutional Privacy (Solana DevRel Alpha)
+import { ConfidentialTransferClient } from '@veil-protocol/sdk/confidential';
+import { ComplianceClient } from '@veil-protocol/sdk/compliance';
+import { RampClient } from '@veil-protocol/sdk/ramps';
 ```
 
 ## Privacy Guarantees
@@ -131,6 +139,72 @@ class RecoveryManager {
   initiateRecovery(guardianShares: Share[]): Promise<Keypair>;
 }
 ```
+
+### ConfidentialTransferClient (SPL Token-2022)
+
+```typescript
+class ConfidentialTransferClient {
+  // Configure account for confidential transfers
+  configureAccount(mint: PublicKey, owner: PublicKey, signTx): Promise<Result>;
+
+  // Deposit to confidential balance
+  deposit(mint: PublicKey, amount: bigint, signTx): Promise<Result>;
+
+  // Confidential transfer (amount hidden)
+  transfer(mint: PublicKey, amount: bigint, recipientElGamalPubkey: Uint8Array, recipient: PublicKey, signTx): Promise<Result>;
+
+  // Add audit key for regulators
+  addAuditKey(authority: PublicKey, scope: 'balances' | 'transfers' | 'full'): Promise<Result>;
+}
+```
+
+### ComplianceClient (Institutional Privacy)
+
+```typescript
+class ComplianceClient {
+  // Add audit key for regulator
+  addAuditKey(authority: PublicKey, config: AuditKeyConfig): Promise<Result>;
+
+  // Store KYC claim (private)
+  storeKYCClaim(claim: KYCClaim): Promise<{ claimId: string }>;
+
+  // Generate ZK proof of KYC compliance
+  generateKYCProof(claimTypes: KYCClaimType[], requirements: object): Promise<ZKKYCProof>;
+
+  // Create compliance attestation
+  createAttestation(subject: PublicKey, type: string, issuer: Keypair, validityDays: number): Promise<Result>;
+}
+```
+
+### RampClient (Anonymous On/Off Ramps)
+
+```typescript
+class RampClient {
+  // Create stealth deposit address
+  createStealthDeposit(): Promise<{ stealthAddress: StealthAddress, depositInfo: string }>;
+
+  // Create P2P buy order (fiat -> crypto)
+  createBuyOrder(params: BuyOrderParams): Promise<{ order: P2POrder }>;
+
+  // Create P2P sell order (crypto -> fiat)
+  createSellOrder(params: SellOrderParams): Promise<{ order: P2POrder, escrow: EscrowState }>;
+
+  // Match with existing order
+  matchOrder(orderId: string, signTx): Promise<{ escrow: EscrowState }>;
+}
+```
+
+## Institutional Privacy (Solana DevRel Alpha)
+
+These features align with Solana's privacy roadmap for institutions:
+
+| Feature | Use Case | Status |
+|---------|----------|--------|
+| **Confidential Transfers** | Hide transfer amounts on-chain | ✅ Implemented |
+| **Audit Keys** | Allow regulators to decrypt balances | ✅ Implemented |
+| **ZK-KYC** | Prove compliance without revealing data | ✅ Implemented |
+| **Stealth Addresses** | Anonymous deposits | ✅ Implemented |
+| **P2P Ramps** | Anonymous fiat on/off ramps | ✅ Implemented |
 
 ## License
 

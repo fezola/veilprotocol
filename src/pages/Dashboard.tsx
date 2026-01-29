@@ -1173,6 +1173,95 @@ export default function Dashboard() {
           >
             <PrivacyVerification />
           </motion.div>
+
+          {/* Institutional Privacy Features Section */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.8 }}
+            className="mt-8"
+          >
+            <div className="glass-panel rounded-xl p-6">
+              <div className="mb-6">
+                <h2 className="text-xl font-bold flex items-center gap-2">
+                  <Icon icon="ph:buildings" className="w-6 h-6 text-primary" />
+                  Institutional Privacy Features
+                </h2>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Enterprise-grade privacy for regulated environments
+                </p>
+              </div>
+
+              <div className="grid md:grid-cols-3 gap-4">
+                {/* Confidential Transfers */}
+                <Link
+                  to="/demo"
+                  className="p-4 rounded-lg bg-secondary/50 border border-border hover:bg-secondary transition-colors group"
+                >
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                      <Icon icon="ph:lock-laminated" className="w-5 h-5 text-primary" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-sm">Confidential Transfers</h3>
+                      <p className="text-xs text-muted-foreground">SPL Token-2022</p>
+                    </div>
+                    <Icon icon="ph:arrow-right" className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Hide transaction amounts using ElGamal encryption. Balances stay confidential while identity is revealed.
+                  </p>
+                </Link>
+
+                {/* ZK-KYC Compliance */}
+                <Link
+                  to="/demo"
+                  className="p-4 rounded-lg bg-secondary/50 border border-border hover:bg-secondary transition-colors group"
+                >
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 rounded-lg bg-success/10 flex items-center justify-center">
+                      <Icon icon="ph:identification-badge" className="w-5 h-5 text-success" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-sm">ZK-KYC Compliance</h3>
+                      <p className="text-xs text-muted-foreground">Audit Keys</p>
+                    </div>
+                    <Icon icon="ph:arrow-right" className="w-4 h-4 text-muted-foreground group-hover:text-success transition-colors" />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Prove compliance without exposing personal data. Regulators get audit keys for selective transparency.
+                  </p>
+                </Link>
+
+                {/* Anonymous Ramps */}
+                <Link
+                  to="/demo"
+                  className="p-4 rounded-lg bg-secondary/50 border border-border hover:bg-secondary transition-colors group"
+                >
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 rounded-lg bg-warning/10 flex items-center justify-center">
+                      <Icon icon="ph:arrows-left-right" className="w-5 h-5 text-warning" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-sm">Anonymous Ramps</h3>
+                      <p className="text-xs text-muted-foreground">P2P Trading</p>
+                    </div>
+                    <Icon icon="ph:arrow-right" className="w-4 h-4 text-muted-foreground group-hover:text-warning transition-colors" />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Stealth addresses for deposits, P2P escrow for fiat on/off ramps. Hide identity while amounts are public.
+                  </p>
+                </Link>
+              </div>
+
+              <div className="mt-4 p-3 rounded-lg bg-primary/5 border border-primary/10">
+                <p className="text-xs text-muted-foreground text-center">
+                  <Icon icon="ph:info" className="w-3 h-3 inline mr-1" />
+                  These features address the three pillars of privacy: Confidentiality, Anonymity, and Programmable Privacy.
+                </p>
+              </div>
+            </div>
+          </motion.div>
         </div>
       </div>
 

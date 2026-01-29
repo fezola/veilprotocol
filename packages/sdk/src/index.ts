@@ -14,6 +14,9 @@
  * - 🗳️ Voting: Private commit-reveal voting for DAOs
  * - 👥 Multisig: Stealth M-of-N signing with hidden identities
  * - 💰 Staking: Private staking with hidden amounts
+ * - 🔒 Confidential: SPL Token-2022 confidential transfers
+ * - 📋 Compliance: Audit keys, ZK-KYC, institutional privacy
+ * - 💱 Ramps: Anonymous on/off ramps for fiat
  *
  * @example
  * ```typescript
@@ -45,6 +48,15 @@
  *
  * // Private staking
  * await veil.staking.stake(validatorPubkey, 100);
+ *
+ * // Confidential transfers (SPL Token-2022)
+ * await veil.confidential.transfer(mint, amount, recipientElGamalPubkey);
+ *
+ * // Add audit key for compliance
+ * await veil.compliance.addAuditKey(regulatorPubkey, { scope: 'balances' });
+ *
+ * // Anonymous on-ramp
+ * const { stealthAddress } = await veil.ramps.createStealthDeposit();
  * ```
  */
 
@@ -65,6 +77,9 @@ export * from './multisig';
 export * from './staking';
 export * from './shadowwire';
 export * from './compression';
+export * from './confidential';
+export * from './compliance';
+export * from './ramps';
 
 // Import for VeilClient
 import { generateIdentityProof, createIdentityCommitment, deriveWallet } from './identity';
@@ -78,6 +93,9 @@ import { StealthMultisigClient } from './multisig';
 import { PrivateStakingClient } from './staking';
 import { ShadowWireIntegration, USD1PrivateClient } from './shadowwire';
 import { CompressedAccountClient, CompressedTokenClient, CompressedShieldedPool } from './compression';
+import { ConfidentialTransferClient, createConfidentialClient } from './confidential';
+import { ComplianceClient, createComplianceClient } from './compliance';
+import { RampClient, createRampClient } from './ramps';
 import { IdentityInput, RecoveryConfig, ShamirShare } from './types';
 
 // ============================================================================
@@ -98,6 +116,9 @@ export interface VeilClientConfig {
  * - DAO privacy: voting, multisig, staking
  * - ShadowWire integration: private transfers, USD1
  * - Light Protocol: ZK compression
+ * - Confidential: SPL Token-2022 confidential transfers
+ * - Compliance: Audit keys, ZK-KYC, institutional privacy
+ * - Ramps: Anonymous on/off ramps
  */
 export class VeilClient {
   public connection: Connection;
@@ -126,6 +147,11 @@ export class VeilClient {
   public compressed: CompressedAccountClient | null = null;
   public compressedTokens: CompressedTokenClient | null = null;
   public compressedPool: CompressedShieldedPool | null = null;
+
+  // Institutional privacy (NEW - Solana DevRel Alpha)
+  public confidential: ConfidentialTransferClient | null = null;
+  public compliance: ComplianceClient | null = null;
+  public ramps: RampClient | null = null;
 
   constructor(config: VeilClientConfig) {
     this.connection = config.connection;
@@ -168,6 +194,11 @@ export class VeilClient {
       this.compressedTokens = new CompressedTokenClient(compressionConfig);
       this.compressedPool = new CompressedShieldedPool(compressionConfig);
 
+      // Initialize institutional privacy modules (Solana DevRel Alpha features)
+      this.confidential = createConfidentialClient(this.connection);
+      this.compliance = createComplianceClient(this.connection);
+      this.ramps = createRampClient(this.connection);
+
       return { success: true };
     } catch (error) {
       return { success: false, error: error instanceof Error ? error.message : 'Unknown' };
@@ -201,6 +232,11 @@ export class VeilClient {
     this.compressed = null;
     this.compressedTokens = null;
     this.compressedPool = null;
+
+    // Institutional privacy modules
+    this.confidential = null;
+    this.compliance = null;
+    this.ramps = null;
   }
   
   /**

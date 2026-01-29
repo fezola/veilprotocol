@@ -429,6 +429,60 @@ export default function About() {
           </div>
         </motion.section>
 
+        {/* Institutional Privacy */}
+        <motion.section
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.75 }}
+          className="mb-12"
+        >
+          <h2 className="text-2xl font-bold flex items-center gap-2 mb-6">
+            <Icon icon="ph:buildings" className="w-6 h-6" />
+            Institutional Privacy
+          </h2>
+          <p className="text-muted-foreground mb-6">
+            Veil Protocol addresses all three pillars of privacy for institutional adoption:
+          </p>
+          <div className="grid md:grid-cols-3 gap-4">
+            <div className="bg-card border border-border rounded-lg p-5">
+              <div className="flex items-center gap-3 mb-3">
+                <Icon icon="ph:lock-laminated" className="w-6 h-6 text-primary" />
+                <h3 className="font-semibold">Confidentiality</h3>
+              </div>
+              <p className="text-sm text-muted-foreground mb-3">
+                Hide balances and amounts while revealing identity. Powered by SPL Token-2022 confidential transfers with ElGamal encryption.
+              </p>
+              <div className="text-xs text-muted-foreground">
+                <strong>Use Case:</strong> Institutional trading without revealing positions
+              </div>
+            </div>
+            <div className="bg-card border border-border rounded-lg p-5">
+              <div className="flex items-center gap-3 mb-3">
+                <Icon icon="ph:user-circle-minus" className="w-6 h-6 text-primary" />
+                <h3 className="font-semibold">Anonymity</h3>
+              </div>
+              <p className="text-sm text-muted-foreground mb-3">
+                Hide identity while amounts remain public. Stealth addresses and P2P ramps enable anonymous on/off boarding.
+              </p>
+              <div className="text-xs text-muted-foreground">
+                <strong>Use Case:</strong> Private payroll and treasury operations
+              </div>
+            </div>
+            <div className="bg-card border border-border rounded-lg p-5">
+              <div className="flex items-center gap-3 mb-3">
+                <Icon icon="ph:sliders" className="w-6 h-6 text-primary" />
+                <h3 className="font-semibold">Programmable Privacy</h3>
+              </div>
+              <p className="text-sm text-muted-foreground mb-3">
+                Selective transparency with ZK proofs. Audit keys allow regulators to verify compliance without public exposure.
+              </p>
+              <div className="text-xs text-muted-foreground">
+                <strong>Use Case:</strong> Regulatory compliance with ZK-KYC
+              </div>
+            </div>
+          </div>
+        </motion.section>
+
         {/* Get Started */}
         <motion.section
           initial={{ opacity: 0, y: 20 }}

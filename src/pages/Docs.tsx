@@ -676,6 +676,250 @@ pub struct ShieldedPool {
         }
       ]
     }
+  },
+  {
+    id: "confidential-transfers",
+    title: "Confidential Transfers",
+    icon: "ph:lock-laminated",
+    content: {
+      title: "SPL Token-2022 Confidential Transfers",
+      description: "Hide transaction amounts using native Solana confidential transfer extension",
+      sections: [
+        {
+          heading: "Overview",
+          content: [
+            "Confidential transfers use the SPL Token-2022 extension to hide transaction amounts on-chain. Balances are encrypted using ElGamal encryption, and range proofs verify amounts are valid without revealing values.",
+            "This enables institutional use cases where identity can be revealed while transaction details remain private."
+          ]
+        },
+        {
+          heading: "Initialize Client",
+          code: `import { ConfidentialTransferClient } from '@veil-protocol/sdk/confidential';
+import { Connection } from '@solana/web3.js';
+
+const connection = new Connection('https://api.devnet.solana.com');
+const client = new ConfidentialTransferClient(connection);
+
+// Generate ElGamal keypair for encryption
+const { publicKey, privateKey } = client.generateElGamalKeypair();`,
+          language: "typescript"
+        },
+        {
+          heading: "Configure Account",
+          code: `// Configure token account for confidential transfers
+const result = await client.configureAccount(
+  mintAddress,      // SPL Token-2022 mint
+  wallet.publicKey, // Account owner
+  signTransaction   // Wallet signing function
+);
+
+console.log('Account configured:', result.signature);`,
+          language: "typescript"
+        },
+        {
+          heading: "Deposit and Transfer",
+          code: `// Deposit to confidential balance (amount encrypted)
+await client.deposit(mintAddress, 1000000n, signTransaction);
+
+// Transfer with hidden amount
+await client.transfer(
+  mintAddress,
+  500000n,                    // Amount (hidden on-chain)
+  recipientElGamalPubkey,     // Recipient's encryption key
+  recipientTokenAccount,      // Recipient's token account
+  signTransaction
+);`,
+          language: "typescript"
+        },
+        {
+          heading: "Add Audit Key",
+          code: `// Allow regulator to decrypt specific transactions
+const { auditKey } = await client.addAuditKey(
+  regulatorPubkey,
+  {
+    scope: 'transactions',    // What can be decrypted
+    jurisdiction: 'US',
+    expiresAt: Date.now() + 365 * 24 * 60 * 60 * 1000
+  }
+);`,
+          language: "typescript"
+        },
+        {
+          heading: "Privacy Guarantees",
+          items: [
+            { label: "Hidden Amounts", desc: "Transaction amounts encrypted with ElGamal on twisted curve25519" },
+            { label: "Range Proofs", desc: "Sigma protocols prove amounts in valid range [0, 2^64)" },
+            { label: "Audit Keys", desc: "Optional keys for regulators to decrypt specific scopes" },
+            { label: "Native Solana", desc: "Uses SPL Token-2022 extension - no external dependencies" }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    id: "compliance",
+    title: "Compliance",
+    icon: "ph:identification-badge",
+    content: {
+      title: "ZK-KYC Compliance",
+      description: "Prove regulatory compliance without exposing personal data",
+      sections: [
+        {
+          heading: "Overview",
+          content: [
+            "The compliance module enables institutional users to prove KYC/KYB compliance using zero-knowledge proofs. Personal data stays private while regulators can verify compliance through audit keys and attestations.",
+            "This enables programmable privacy with selective transparency for institutional requirements."
+          ]
+        },
+        {
+          heading: "Initialize Compliance Client",
+          code: `import { ComplianceClient } from '@veil-protocol/sdk/compliance';
+import { Connection } from '@solana/web3.js';
+
+const connection = new Connection('https://api.devnet.solana.com');
+const client = new ComplianceClient(connection);`,
+          language: "typescript"
+        },
+        {
+          heading: "Store KYC Claims",
+          code: `// Store encrypted KYC claim (data never exposed)
+const { claimId } = await client.storeKYCClaim({
+  type: 'identity',
+  data: {
+    nationality: 'US',
+    accredited: true,
+    kycDate: Date.now()
+  },
+  issuer: kycProviderPubkey,
+  issuedAt: Date.now()
+});`,
+          language: "typescript"
+        },
+        {
+          heading: "Generate ZK-KYC Proof",
+          code: `// Prove compliance without revealing data
+const { proof } = await client.generateKYCProof(
+  ['identity', 'accreditation'],  // Claim types to prove
+  {
+    minAge: 18,
+    jurisdiction: 'US',
+    accreditedRequired: true
+  }
+);
+
+// Proof can be verified on-chain without revealing:
+// - Actual age (only proves >= 18)
+// - Personal details
+// - Document numbers`,
+          language: "typescript"
+        },
+        {
+          heading: "Create Attestation",
+          code: `// Issuer creates on-chain attestation
+const { attestation } = await client.createAttestation(
+  subjectPubkey,      // User being attested
+  'kyc_verified',     // Compliance type
+  issuerKeypair,      // Issuer's signing key
+  365                 // Validity in days
+);
+
+// Attestation stored on-chain, personal data stays private`,
+          language: "typescript"
+        },
+        {
+          heading: "Compliance Features",
+          items: [
+            { label: "ZK-KYC Proofs", desc: "Prove identity claims without revealing personal data" },
+            { label: "Audit Keys", desc: "Jurisdiction-specific keys for regulatory access" },
+            { label: "Attestations", desc: "On-chain compliance certificates with expiration" },
+            { label: "Selective Disclosure", desc: "Reveal only required fields to specific parties" }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    id: "anonymous-ramps",
+    title: "Anonymous Ramps",
+    icon: "ph:arrows-left-right",
+    content: {
+      title: "Anonymous Fiat On/Off Ramps",
+      description: "P2P trading with stealth addresses and escrow",
+      sections: [
+        {
+          heading: "Overview",
+          content: [
+            "The ramps module enables anonymous fiat-to-crypto conversion using stealth addresses and P2P escrow. Users can on-ramp and off-ramp without revealing their identity while transaction amounts remain public.",
+            "This addresses the anonymity pillar - hiding identity while amounts are visible."
+          ]
+        },
+        {
+          heading: "Initialize Ramp Client",
+          code: `import { RampClient } from '@veil-protocol/sdk/ramps';
+import { Connection } from '@solana/web3.js';
+
+const connection = new Connection('https://api.devnet.solana.com');
+const client = new RampClient(connection);`,
+          language: "typescript"
+        },
+        {
+          heading: "Create Stealth Address",
+          code: `// Generate stealth address for anonymous deposits
+const { stealthAddress, ephemeralPubkey, viewKey } =
+  await client.createStealthAddress(recipientPubkey);
+
+// Sender deposits to stealthAddress
+// Recipient scans with viewKey to find funds
+// Nobody else can link deposit to recipient`,
+          language: "typescript"
+        },
+        {
+          heading: "Create P2P Order",
+          code: `// Create sell order (want to sell crypto for fiat)
+const { orderId } = await client.createOrder({
+  side: 'sell',
+  amount: 100,                    // 100 USDC
+  fiatCurrency: 'USD',
+  fiatAmount: 100,
+  paymentMethods: ['bank_transfer', 'venmo'],
+  minTrade: 10,
+  maxTrade: 100
+});`,
+          language: "typescript"
+        },
+        {
+          heading: "Match and Execute Trade",
+          code: `// Buyer matches the order
+const { escrowId } = await client.matchOrder(orderId, buyerPubkey);
+
+// Crypto locked in escrow, buyer sends fiat
+
+// After fiat received, seller releases escrow
+await client.releaseEscrow(escrowId, signTransaction);
+
+// Buyer receives crypto at their stealth address`,
+          language: "typescript"
+        },
+        {
+          heading: "Supported Payment Methods",
+          items: [
+            { label: "Bank Transfer", desc: "Wire transfers, ACH, SEPA" },
+            { label: "Venmo / PayPal", desc: "Popular US payment apps" },
+            { label: "Wise / Revolut", desc: "International transfers" },
+            { label: "Cash Deposit", desc: "In-person cash trades" }
+          ]
+        },
+        {
+          heading: "Privacy Features",
+          items: [
+            { label: "Stealth Addresses", desc: "DKSAP protocol for unlinkable deposits" },
+            { label: "P2P Escrow", desc: "Trustless trading without centralized custody" },
+            { label: "Anonymous Matching", desc: "Order book without identity requirements" },
+            { label: "Multi-Currency", desc: "USD, EUR, GBP, JPY, CHF, and more" }
+          ]
+        }
+      ]
+    }
   }
 ];
 
