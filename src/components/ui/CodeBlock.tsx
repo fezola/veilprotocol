@@ -68,12 +68,36 @@ export function CodeBlock({ examples, title }: CodeBlockProps) {
         </button>
       </div>
 
-      {/* Code content */}
-      <pre className="p-4 overflow-x-auto text-sm leading-relaxed !bg-transparent !m-0">
+      {/* Code content with custom scrollbar */}
+      <pre
+        className="p-4 overflow-x-auto text-sm leading-relaxed !bg-transparent !m-0"
+        style={{
+          scrollbarWidth: 'thin',
+          scrollbarColor: '#4a5568 #1a202c'
+        }}
+      >
         <code className={`language-${examples[activeTab].language}`}>
           {examples[activeTab].code}
         </code>
       </pre>
+
+      <style>{`
+        .code-block pre::-webkit-scrollbar {
+          height: 8px;
+          width: 8px;
+        }
+        .code-block pre::-webkit-scrollbar-track {
+          background: #1a202c;
+          border-radius: 4px;
+        }
+        .code-block pre::-webkit-scrollbar-thumb {
+          background: #4a5568;
+          border-radius: 4px;
+        }
+        .code-block pre::-webkit-scrollbar-thumb:hover {
+          background: #718096;
+        }
+      `}</style>
     </div>
   );
 }

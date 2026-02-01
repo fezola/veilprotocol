@@ -429,6 +429,112 @@ export default function About() {
           </div>
         </motion.section>
 
+        {/* What You Get - Consumer Features */}
+        <motion.section
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.7 }}
+          className="mb-12"
+        >
+          <h2 className="text-2xl font-bold flex items-center gap-2 mb-6">
+            <Icon icon="ph:user-circle" className="w-6 h-6" />
+            What You Get
+          </h2>
+          <p className="text-muted-foreground mb-6">
+            Privacy tools that work out of the box. No technical knowledge required.
+          </p>
+
+          <div className="space-y-6">
+            {/* Identity & Access */}
+            <div className="bg-card border border-border rounded-lg p-5">
+              <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                <Icon icon="ph:fingerprint" className="w-5 h-5 text-primary" />
+                Your Identity, Your Control
+              </h3>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li className="flex items-start gap-2">
+                  <Icon icon="ph:check" className="w-4 h-4 text-success mt-0.5 flex-shrink-0" />
+                  Log in without giving up your email or personal info
+                </li>
+                <li className="flex items-start gap-2">
+                  <Icon icon="ph:check" className="w-4 h-4 text-success mt-0.5 flex-shrink-0" />
+                  Recover your wallet through trusted contacts, not seed phrases
+                </li>
+                <li className="flex items-start gap-2">
+                  <Icon icon="ph:check" className="w-4 h-4 text-success mt-0.5 flex-shrink-0" />
+                  Your credentials never touch a server
+                </li>
+              </ul>
+            </div>
+
+            {/* Transactions */}
+            <div className="bg-card border border-border rounded-lg p-5">
+              <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                <Icon icon="ph:paper-plane-tilt" className="w-5 h-5 text-primary" />
+                Private Transactions
+              </h3>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li className="flex items-start gap-2">
+                  <Icon icon="ph:check" className="w-4 h-4 text-success mt-0.5 flex-shrink-0" />
+                  Send and receive without your balance showing up on block explorers
+                </li>
+                <li className="flex items-start gap-2">
+                  <Icon icon="ph:check" className="w-4 h-4 text-success mt-0.5 flex-shrink-0" />
+                  Swap tokens without revealing what you hold
+                </li>
+                <li className="flex items-start gap-2">
+                  <Icon icon="ph:check" className="w-4 h-4 text-success mt-0.5 flex-shrink-0" />
+                  Stake without broadcasting your position to the world
+                </li>
+              </ul>
+            </div>
+
+            {/* Participation */}
+            <div className="bg-card border border-border rounded-lg p-5">
+              <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                <Icon icon="ph:users-three" className="w-5 h-5 text-primary" />
+                Participate Without Exposure
+              </h3>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li className="flex items-start gap-2">
+                  <Icon icon="ph:check" className="w-4 h-4 text-success mt-0.5 flex-shrink-0" />
+                  Vote in DAOs anonymously - no one knows how you voted or how much you hold
+                </li>
+                <li className="flex items-start gap-2">
+                  <Icon icon="ph:check" className="w-4 h-4 text-success mt-0.5 flex-shrink-0" />
+                  Join multisig wallets where signers stay hidden
+                </li>
+                <li className="flex items-start gap-2">
+                  <Icon icon="ph:check" className="w-4 h-4 text-success mt-0.5 flex-shrink-0" />
+                  Access DeFi by proving eligibility, not showing your full portfolio
+                </li>
+              </ul>
+            </div>
+
+            {/* Moving Money */}
+            <div className="bg-card border border-border rounded-lg p-5">
+              <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                <Icon icon="ph:vault" className="w-5 h-5 text-primary" />
+                Move Money Quietly
+              </h3>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li className="flex items-start gap-2">
+                  <Icon icon="ph:check" className="w-4 h-4 text-success mt-0.5 flex-shrink-0" />
+                  Shielded pools for mixing funds
+                </li>
+                <li className="flex items-start gap-2">
+                  <Icon icon="ph:check" className="w-4 h-4 text-success mt-0.5 flex-shrink-0" />
+                  Stealth addresses for receiving payments
+                </li>
+                <li className="flex items-start gap-2">
+                  <Icon icon="ph:check" className="w-4 h-4 text-success mt-0.5 flex-shrink-0" />
+                  Confidential transfers where amounts stay encrypted
+                </li>
+              </ul>
+            </div>
+          </div>
+        </motion.section>
+
         {/* Institutional Privacy */}
         <motion.section
           initial={{ opacity: 0, y: 20 }}

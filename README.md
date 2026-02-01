@@ -4,7 +4,31 @@ Privacy-preserving wallet infrastructure for Solana.
 
 ## Overview
 
-Veil Protocol provides a comprehensive privacy layer for Solana applications:
+Veil Protocol is consumer-facing privacy infrastructure for Solana. Users can directly log in, send private transactions, vote anonymously, stake without exposing positions, and recover wallets through trusted contacts.
+
+## What You Get
+
+**Your Identity, Your Control**
+- Log in without giving up your email or personal info
+- Recover your wallet through trusted contacts, not seed phrases
+- Your credentials never touch a server
+
+**Private Transactions**
+- Send and receive without your balance showing on block explorers
+- Swap tokens without revealing what you hold
+- Stake without broadcasting your position
+
+**Participate Without Exposure**
+- Vote in DAOs anonymously
+- Join multisig wallets where signers stay hidden
+- Access DeFi by proving eligibility, not showing your portfolio
+
+**Move Money Quietly**
+- Shielded pools for mixing funds
+- Stealth addresses for receiving payments
+- Confidential transfers where amounts stay encrypted
+
+## Features
 
 - **Private Identity** - Zero-knowledge proof-based wallet identity
 - **Social Recovery** - Time-locked recovery without exposing guardians

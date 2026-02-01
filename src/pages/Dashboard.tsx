@@ -7,6 +7,7 @@ import { StatusCard } from "@/components/ui/StatusCard";
 import { ZKProofVisualizer } from "@/components/ui/ZKProofVisualizer";
 import { PrivacyVerification } from "@/components/PrivacyVerification";
 import { PrivatePaymentDialog } from "@/components/ui/PrivatePaymentDialog";
+import { DeveloperPortal } from "@/components/dashboard/DeveloperPortal";
 import { generateTransactionProof, ZKProofData } from "@/lib/zkProof";
 import { useWallet, useConnection } from "@solana/wallet-adapter-react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -19,6 +20,8 @@ import {
   commitmentToBytes
 } from "@/lib/veilProgram";
 import { getNetworkStatus, isDevnetMode, isDemoMode } from "@/lib/shadowpay";
+
+type DashboardView = "developer" | "demo";
 
 type ProofStage = "idle" | "hashing" | "generating" | "verifying" | "complete";
 
@@ -33,6 +36,9 @@ export default function Dashboard() {
   const { publicKey, signTransaction, connected } = useWallet();
   const { connection } = useConnection();
   const { commitment, isAuthenticated } = useAuth();
+
+  // View toggle state - defaults to developer portal
+  const [activeView, setActiveView] = useState<DashboardView>("developer");
 
   const [isTransacting, setIsTransacting] = useState(false);
   const [transactionComplete, setTransactionComplete] = useState(false);
@@ -226,7 +232,7 @@ export default function Dashboard() {
     <PageLayout>
       <div className="pt-24 pb-16">
         <div className="container mx-auto px-4 max-w-[1400px]">
-          {/* Header with Privacy Health */}
+          {/* Header with View Toggle */}
           <div className="mb-8">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -234,53 +240,95 @@ export default function Dashboard() {
               className="flex flex-col lg:flex-row lg:items-start justify-between gap-6 mb-6"
             >
               <div>
-                <h1 className="text-3xl font-bold mb-2">Privacy Dashboard</h1>
+                <h1 className="text-3xl font-bold mb-2">
+                  {activeView === "developer" ? "Developer Portal" : "Privacy Dashboard"}
+                </h1>
                 <p className="text-muted-foreground">
-                  Full-stack privacy infrastructure operating on Solana devnet
+                  {activeView === "developer"
+                    ? "Build privacy-first applications on Solana with Veil SDK"
+                    : "Full-stack privacy infrastructure operating on Solana devnet"
+                  }
                 </p>
               </div>
 
-              {/* Privacy Health Indicator */}
-              <div className="glass-panel rounded-xl p-4 min-w-[280px]">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-sm font-semibold">Privacy Health</h3>
-                  <span className={`text-2xl font-bold ${privacyScore === 100 ? 'text-success' : 'text-warning'}`}>
-                    {privacyScore}%
-                  </span>
+              {/* View Toggle + Privacy Health */}
+              <div className="flex flex-col sm:flex-row gap-4">
+                {/* View Toggle Buttons */}
+                <div className="glass-panel rounded-xl p-1.5 flex gap-1">
+                  <button
+                    onClick={() => setActiveView("developer")}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
+                      activeView === "developer"
+                        ? "bg-primary text-primary-foreground"
+                        : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+                    }`}
+                  >
+                    <Icon icon="ph:code" className="w-4 h-4" />
+                    Developer
+                  </button>
+                  <button
+                    onClick={() => setActiveView("demo")}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
+                      activeView === "demo"
+                        ? "bg-primary text-primary-foreground"
+                        : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+                    }`}
+                  >
+                    <Icon icon="ph:play" className="w-4 h-4" />
+                    Demo
+                  </button>
                 </div>
-                <div className="w-full h-2 bg-secondary rounded-full overflow-hidden mb-3">
-                  <div
-                    className={`h-full transition-all duration-500 ${privacyScore === 100 ? 'bg-success' : 'bg-warning'}`}
-                    style={{ width: `${privacyScore}%` }}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <div className="flex items-center gap-2 text-xs">
-                    <Icon icon="ph:check-circle" className="w-3.5 h-3.5 text-success" />
-                    <span className="text-muted-foreground">ZK authentication active</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-xs">
-                    <Icon icon="ph:check-circle" className="w-3.5 h-3.5 text-success" />
-                    <span className="text-muted-foreground">Private RPC configured</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-xs">
-                    {recoverySetup ? (
-                      <>
+
+                {/* Privacy Health Indicator - Only show in demo view */}
+                {activeView === "demo" && (
+                  <div className="glass-panel rounded-xl p-4 min-w-[280px]">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="text-sm font-semibold">Privacy Health</h3>
+                      <span className={`text-2xl font-bold ${privacyScore === 100 ? 'text-success' : 'text-warning'}`}>
+                        {privacyScore}%
+                      </span>
+                    </div>
+                    <div className="w-full h-2 bg-secondary rounded-full overflow-hidden mb-3">
+                      <div
+                        className={`h-full transition-all duration-500 ${privacyScore === 100 ? 'bg-success' : 'bg-warning'}`}
+                        style={{ width: `${privacyScore}%` }}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <div className="flex items-center gap-2 text-xs">
                         <Icon icon="ph:check-circle" className="w-3.5 h-3.5 text-success" />
-                        <span className="text-muted-foreground">Recovery configured</span>
-                      </>
-                    ) : (
-                      <>
-                        <Icon icon="ph:warning-circle" className="w-3.5 h-3.5 text-warning" />
-                        <Link to="/recovery-setup" className="text-warning hover:underline">Setup recovery</Link>
-                      </>
-                    )}
+                        <span className="text-muted-foreground">ZK authentication active</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs">
+                        <Icon icon="ph:check-circle" className="w-3.5 h-3.5 text-success" />
+                        <span className="text-muted-foreground">Private RPC configured</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs">
+                        {recoverySetup ? (
+                          <>
+                            <Icon icon="ph:check-circle" className="w-3.5 h-3.5 text-success" />
+                            <span className="text-muted-foreground">Recovery configured</span>
+                          </>
+                        ) : (
+                          <>
+                            <Icon icon="ph:warning-circle" className="w-3.5 h-3.5 text-warning" />
+                            <Link to="/recovery-setup" className="text-warning hover:underline">Setup recovery</Link>
+                          </>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             </motion.div>
           </div>
 
+          {/* Developer Portal View */}
+          {activeView === "developer" && <DeveloperPortal />}
+
+          {/* Demo View - Original Dashboard Content */}
+          {activeView === "demo" && (
+          <>
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
             {/* Main Content - 3 columns */}
             <div className="lg:col-span-3 space-y-6">
@@ -1262,6 +1310,8 @@ export default function Dashboard() {
               </div>
             </div>
           </motion.div>
+          </>
+          )}
         </div>
       </div>
 
