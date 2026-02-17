@@ -28,6 +28,7 @@ const navItems = [
   { label: "SDK", href: "/sdk" },
   { label: "CLI", href: "/cli" },
   { label: "Docs", href: "/docs" },
+  { label: "Whitepaper", href: "/whitepaper" },
 ];
 
 export function Header() {

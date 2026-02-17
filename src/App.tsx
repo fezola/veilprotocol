@@ -21,6 +21,7 @@ import ShadowPayExplained from "./pages/ShadowPayExplained";
 import CLI from "./pages/CLI";
 import SDK from "./pages/SDK";
 import ShadowWire from "./pages/ShadowWire";
+import Whitepaper from "./pages/Whitepaper";
 import NotFound from "./pages/NotFound";
 // Feature pages
 import FeatureIdentity from "./pages/features/FeatureIdentity";
@@ -94,6 +95,7 @@ const App = () => (
               <Route path="/cli" element={<CLI />} />
               <Route path="/sdk" element={<SDK />} />
               <Route path="/shadowwire" element={<ShadowWire />} />
+              <Route path="/whitepaper" element={<Whitepaper />} />
               {/* Feature pages */}
               <Route path="/features/identity" element={<FeatureIdentity />} />
               <Route path="/features/shielded" element={<FeatureShielded />} />
