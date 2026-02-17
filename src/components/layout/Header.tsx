@@ -36,6 +36,7 @@ export function Header() {
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [featuresOpen, setFeaturesOpen] = useState(false);
+  const [mobileFeaturesOpen, setMobileFeaturesOpen] = useState(false);
   const featuresRef = useRef<HTMLDivElement>(null);
   const { connected } = useWallet();
   const { isAuthenticated, veilWallet, logout } = useAuth();
@@ -198,25 +199,43 @@ export function Header() {
             className="md:hidden glass-panel border-t"
           >
             <nav className="container mx-auto px-4 py-4 flex flex-col gap-2">
-              {/* Mobile Features Section */}
-              <div className="px-4 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              {/* Mobile Features Section - Collapsible */}
+              <button
+                onClick={() => setMobileFeaturesOpen(!mobileFeaturesOpen)}
+                className="px-4 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center justify-between w-full"
+              >
                 Features
-              </div>
-              {featureItems.map((item) => (
-                <Link
-                  key={item.href}
-                  to={item.href}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={`px-4 py-3 rounded-lg text-sm font-medium transition-colors flex items-center gap-3 ${
-                    location.pathname === item.href
-                      ? "bg-primary/10 text-primary"
-                      : "text-muted-foreground hover:bg-secondary"
-                  }`}
-                >
-                  <Icon icon={item.icon} className="w-4 h-4" />
-                  {item.label}
-                </Link>
-              ))}
+                <Icon
+                  icon="ph:caret-down"
+                  className={`w-4 h-4 transition-transform ${mobileFeaturesOpen ? "rotate-180" : ""}`}
+                />
+              </button>
+              <AnimatePresence>
+                {mobileFeaturesOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="overflow-hidden"
+                  >
+                    {featureItems.map((item) => (
+                      <Link
+                        key={item.href}
+                        to={item.href}
+                        onClick={() => setMobileMenuOpen(false)}
+                        className={`px-4 py-3 rounded-lg text-sm font-medium transition-colors flex items-center gap-3 ${
+                          location.pathname === item.href
+                            ? "bg-primary/10 text-primary"
+                            : "text-muted-foreground hover:bg-secondary"
+                        }`}
+                      >
+                        <Icon icon={item.icon} className="w-4 h-4" />
+                        {item.label}
+                      </Link>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
               <div className="border-t border-border my-2" />
 
